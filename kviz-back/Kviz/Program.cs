@@ -1,11 +1,23 @@
+using Kviz.Models;
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+
+// Dodaj Swagger/OpenAPI
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+// Registracija DbContext-a sa Oracle providerom
+builder.Services.AddDbContext<AppDbContext>(options =>
+{
+    options.UseOracle(builder.Configuration.GetConnectionString("OracleDb"))
+           .LogTo(Console.WriteLine, LogLevel.Information)
+           .EnableSensitiveDataLogging()
+           .EnableDetailedErrors();
+});
 
 var app = builder.Build();
 
