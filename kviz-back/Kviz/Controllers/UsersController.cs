@@ -1,8 +1,12 @@
 ﻿using Kviz.DTOs;
+using Kviz.Interfaces;
 using Kviz.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Oracle.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
+using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -14,11 +18,13 @@ namespace Kviz.Controllers
     {
         private readonly AppDbContext _context;
         private readonly ILogger<UsersController> _logger;
+        private readonly IJwtService _jwtService;
 
-        public UsersController(AppDbContext context, ILogger<UsersController> logger)
+        public UsersController(AppDbContext context, ILogger<UsersController> logger, IJwtService jwtService)
         {
             _context = context;
             _logger = logger;
+            _jwtService = jwtService;
         }
 
         // 1. Test osnovne konekcije
@@ -134,11 +140,16 @@ namespace Kviz.Controllers
 
                 _logger.LogInformation("Uspešno registrovan korisnik: {Username}", user.Username);
 
+                // 8. Generiši JWT token odmah nakon registracije
+                var token = _jwtService.GenerateToken(user);
+
                 return Ok(new
                 {
                     message = "Registracija je uspešna",
                     userId = user.User_Id,
-                    username = user.Username
+                    username = user.Username,
+                    token = token,
+                    tokenType = "Bearer"
                 });
             }
             catch (DbUpdateException ex)
@@ -181,12 +192,18 @@ namespace Kviz.Controllers
                     return Unauthorized(new { message = "Neispravno korisničko ime ili lozinka" });
                 }
 
+                // Generiši JWT token
+                var token = _jwtService.GenerateToken(user);
+
                 return Ok(new
                 {
                     message = "Uspešna prijava",
                     userId = user.User_Id,
                     username = user.Username,
-                    isAdmin = user.Is_Admin == 1
+                    email = user.Email,
+                    isAdmin = user.Is_Admin == 1,
+                    token = token,
+                    tokenType = "Bearer"
                 });
             }
             catch (Exception ex)
@@ -197,16 +214,64 @@ namespace Kviz.Controllers
         }
 
 
-
-
-
-        // Standardni endpoint /api/users za dohvatanje svih korisnika
-        [HttpGet]
-        public async Task<IActionResult> GetUsers()
+        // 5. Zaštićeni endpoint - potrebna autentifikacija
+        [HttpGet("profile")]
+        [Authorize]
+        public async Task<IActionResult> GetProfile()
         {
             try
             {
-                var users = await _context.Users.ToListAsync();
+                var userId = GetCurrentUserId();
+                if (userId == null)
+                    return Unauthorized();
+
+                var user = await _context.Users.FindAsync(userId);
+                if (user == null)
+                    return NotFound(new { message = "Korisnik nije pronađen" });
+
+                return Ok(new
+                {
+                    userId = user.User_Id,
+                    username = user.Username,
+                    email = user.Email,
+                    isAdmin = user.Is_Admin == 1,
+                    profileImageUrl = user.Profile_Image_Url
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Greška pri dohvatanju profila");
+                return StatusCode(500, new { message = "Greška pri dohvatanju profila" });
+            }
+        }
+
+
+        // 6. Admin-only endpoint
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> AdminGetUsers()
+        {
+            try
+            {
+                // Proveri da li je korisnik admin
+                if (!IsCurrentUserAdmin())
+                    return StatusCode(403, new
+                    {
+                        message = "Nemate dozvolu za pristup ovom resursu"
+                    });
+
+                var users = await _context.Users
+                    .Select(u => new
+                    {
+                        u.User_Id,
+                        u.Username,
+                        u.Email,
+                        u.Is_Admin,
+                        u.Profile_Image_Url
+                        // Ne vraćamo password hash iz bezbednosnih razloga
+                    })
+                    .ToListAsync();
+
                 return Ok(users);
             }
             catch (Exception ex)
@@ -220,7 +285,98 @@ namespace Kviz.Controllers
             }
         }
 
-        
+
+        // 7. Endpoint za ažuriranje profila
+        [HttpPut("profile")]
+        [Authorize]
+        public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileDto dto)
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                if (userId == null)
+                    return Unauthorized();
+
+                var user = await _context.Users.FindAsync(userId);
+                if (user == null)
+                    return NotFound(new { message = "Korisnik nije pronađen" });
+
+                // Ažuriraj samo prosleđene vrednosti
+                if (!string.IsNullOrWhiteSpace(dto.Email) && dto.Email != user.Email)
+                {
+                    if (!IsValidEmail(dto.Email))
+                        return BadRequest(new { message = "Neispravna email adresa" });
+
+                    // Proveri da li email već postoji
+                    var emailExists = await _context.Users
+                        .AnyAsync(u => u.Email.ToLower() == dto.Email.ToLower() && u.User_Id != userId);
+
+                    if (emailExists)
+                        return BadRequest(new { message = "Email je već u upotrebi" });
+
+                    user.Email = dto.Email.Trim().ToLower();
+                }
+
+                if (!string.IsNullOrWhiteSpace(dto.ProfileImageUrl))
+                    user.Profile_Image_Url = dto.ProfileImageUrl.Trim();
+
+                await _context.SaveChangesAsync();
+
+                return Ok(new { message = "Profil je uspešno ažuriran" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Greška pri ažuriranju profila");
+                return StatusCode(500, new { message = "Greška pri ažuriranju profila" });
+            }
+        }
+
+        // 8. Logout endpoint (opciono - za blacklisting tokena)
+        [HttpPost("logout")]
+        [Authorize]
+        public IActionResult Logout()
+        {
+            // U ovom slučaju, client samo treba da obriše token
+            // Za kompletnu implementaciju, možete dodati token blacklisting
+            return Ok(new { message = "Uspešno ste se odjavili" });
+        }
+
+
+
+
+
+
+
+        // Helper metode
+        private int? GetCurrentUserId()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            return int.TryParse(userIdClaim, out var userId) ? userId : null;
+        }
+
+        private bool IsCurrentUserAdmin()
+        {
+            var isAdminClaim = User.FindFirst("IsAdmin")?.Value;
+            return isAdminClaim == "1";
+        }
+
+        private static bool IsValidEmail(string email)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                return false;
+
+            try
+            {
+                var emailAttribute = new EmailAddressAttribute();
+                return emailAttribute.IsValid(email);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+
     }
 
 }
