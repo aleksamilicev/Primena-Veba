@@ -24,6 +24,9 @@ builder.Services.AddDbContext<AppDbContext>(options =>
            .EnableDetailedErrors();
 });
 
+// Registracija servisa
+builder.Services.AddScoped<IQuestionService, QuestionService>();
+
 // JWT Service
 builder.Services.AddScoped<IJwtService, JwtService>();
 

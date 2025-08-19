@@ -380,18 +380,3 @@ namespace Kviz.Controllers
     }
 
 }
-
-// DODATNO: Dodajte u Program.cs za detaljno logovanje
-/*
-builder.Logging.AddConsole();
-builder.Logging.SetMinimumLevel(LogLevel.Information);
-
-// Za EF Core SQL logovanje
-builder.Services.AddDbContext<AppDbContext>(options =>
-{
-    options.UseOracle(builder.Configuration.GetConnectionString("DefaultConnection"))
-           .LogTo(Console.WriteLine, LogLevel.Information)
-           .EnableSensitiveDataLogging()
-           .EnableDetailedErrors();
-});
-*/

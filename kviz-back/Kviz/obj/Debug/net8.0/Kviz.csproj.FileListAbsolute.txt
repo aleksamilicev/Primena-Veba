@@ -8,7 +8,9 @@ C:\Users\KORISNIK\Desktop\veb2\Primena-Veba\kviz-back\Kviz\bin\Debug\net8.0\Kviz
 C:\Users\KORISNIK\Desktop\veb2\Primena-Veba\kviz-back\Kviz\bin\Debug\net8.0\Kviz.pdb
 C:\Users\KORISNIK\Desktop\veb2\Primena-Veba\kviz-back\Kviz\bin\Debug\net8.0\Azure.Core.dll
 C:\Users\KORISNIK\Desktop\veb2\Primena-Veba\kviz-back\Kviz\bin\Debug\net8.0\Azure.Identity.dll
+C:\Users\KORISNIK\Desktop\veb2\Primena-Veba\kviz-back\Kviz\bin\Debug\net8.0\BCrypt.Net-Next.dll
 C:\Users\KORISNIK\Desktop\veb2\Primena-Veba\kviz-back\Kviz\bin\Debug\net8.0\Humanizer.dll
+C:\Users\KORISNIK\Desktop\veb2\Primena-Veba\kviz-back\Kviz\bin\Debug\net8.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll
 C:\Users\KORISNIK\Desktop\veb2\Primena-Veba\kviz-back\Kviz\bin\Debug\net8.0\Microsoft.Bcl.AsyncInterfaces.dll
 C:\Users\KORISNIK\Desktop\veb2\Primena-Veba\kviz-back\Kviz\bin\Debug\net8.0\Microsoft.Build.Locator.dll
 C:\Users\KORISNIK\Desktop\veb2\Primena-Veba\kviz-back\Kviz\bin\Debug\net8.0\Microsoft.CodeAnalysis.dll
@@ -171,5 +173,3 @@ C:\Users\KORISNIK\Desktop\veb2\Primena-Veba\kviz-back\Kviz\obj\Debug\net8.0\refi
 C:\Users\KORISNIK\Desktop\veb2\Primena-Veba\kviz-back\Kviz\obj\Debug\net8.0\Kviz.pdb
 C:\Users\KORISNIK\Desktop\veb2\Primena-Veba\kviz-back\Kviz\obj\Debug\net8.0\Kviz.genruntimeconfig.cache
 C:\Users\KORISNIK\Desktop\veb2\Primena-Veba\kviz-back\Kviz\obj\Debug\net8.0\ref\Kviz.dll
-C:\Users\KORISNIK\Desktop\veb2\Primena-Veba\kviz-back\Kviz\bin\Debug\net8.0\BCrypt.Net-Next.dll
-C:\Users\KORISNIK\Desktop\veb2\Primena-Veba\kviz-back\Kviz\bin\Debug\net8.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll

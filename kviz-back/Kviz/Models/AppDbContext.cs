@@ -107,6 +107,40 @@ namespace Kviz.Models
                 .WithMany()
                 .HasForeignKey(r => r.Quiz_Id)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // Konfiguracija za Question tabelu
+            modelBuilder.Entity<Question>(entity =>
+            {
+                entity.ToTable("QUESTIONS");
+                entity.HasKey(e => e.Question_Id);
+
+                entity.Property(e => e.Question_Id)
+                    .HasColumnName("QUESTION_ID")
+                    .ValueGeneratedOnAdd();
+
+                entity.Property(e => e.Quiz_Id)
+                    .HasColumnName("QUIZ_ID")
+                    .IsRequired();
+
+                entity.Property(e => e.Question_Text)
+                    .HasColumnName("QUESTION_TEXT")
+                    .IsRequired();
+
+                entity.Property(e => e.Question_Type)
+                    .HasColumnName("QUESTION_TYPE");
+
+                entity.Property(e => e.Correct_Answer)
+                    .HasColumnName("CORRECT_ANSWER");
+
+                entity.Property(e => e.Difficulty_Level)
+                    .HasColumnName("DIFFICULTY_LEVEL");
+
+                // Foreign key relationship
+                entity.HasOne(d => d.Quiz)
+                    .WithMany(p => p.Questions)
+                    .HasForeignKey(d => d.Quiz_Id)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
         }
     }
 }
