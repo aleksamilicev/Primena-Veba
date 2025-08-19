@@ -1,7 +1,10 @@
-﻿using Kviz.Models;
+﻿using Kviz.DTOs;
+using Kviz.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Oracle.EntityFrameworkCore;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace Kviz.Controllers
 {
@@ -51,111 +54,153 @@ namespace Kviz.Controllers
             }
         }
 
-        // 2. Test direktnog SQL upita
-        [HttpGet("test-raw-sql")]
-        public async Task<IActionResult> TestRawSql()
+
+        // 2. Endpoint za registraciju korisnika
+        [HttpPost("register")]
+        public async Task<IActionResult> Register([FromBody] RegisterUserDto dto)
         {
             try
             {
-                // Direktan SQL upit za testiranje
-                var users = await _context.Database
-                    .SqlQueryRaw<UserRawResult>("SELECT USER_ID, USERNAME, EMAIL FROM SKALARR.USERS")
-                    .ToListAsync();
-
-                return Ok(new
+                // 1. Validacija modela preko atributa u DTO-u
+                if (!ModelState.IsValid)
                 {
-                    success = true,
-                    count = users.Count,
-                    users = users
-                });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new
-                {
-                    success = false,
-                    message = "Greška sa raw SQL",
-                    error = ex.Message,
-                    innerException = ex.InnerException?.Message
-                });
-            }
-        }
-
-        // 3. Test sa detaljnim logom
-        [HttpGet("test-detailed")]
-        public async Task<IActionResult> GetUsersDetailed()
-        {
-            try
-            {
-                _logger.LogInformation("Pokušavam da dohvatim korisnike...");
-
-                // Proverava da li DbSet postoji
-                if (_context.Users == null)
-                {
-                    return BadRequest("Users DbSet je null");
+                    var errors = ModelState.Values
+                        .SelectMany(v => v.Errors)
+                        .Select(e => e.ErrorMessage)
+                        .ToList();
+                    return BadRequest(new { message = "Neispravni podaci", errors = errors });
                 }
 
-                // Pokušava da dobije broj korisnika
-                var count = await _context.Users.CountAsync();
-                _logger.LogInformation("Broj korisnika u bazi: {Count}", count);
+                // 2. Validacija korisničkog imena
+                if (string.IsNullOrWhiteSpace(dto.Username) || dto.Username.Length < 3)
+                    return BadRequest(new { message = "Korisničko ime mora imati najmanje 3 karaktera" });
 
-                // Pokušava da dobije korisnike
-                var users = await _context.Users.ToListAsync();
-                _logger.LogInformation("Dohvatil {UserCount} korisnika", users.Count);
+                if (dto.Username.Length > 12)
+                    return BadRequest(new { message = "Korisničko ime ne sme biti duže od 12 karaktera" });
+
+
+                // 3. Validacija lozinke
+                if (string.IsNullOrWhiteSpace(dto.Password) || dto.Password.Length < 6)
+                    return BadRequest(new { message = "Lozinka mora imati najmanje 6 karaktera" });
+
+                if (dto.Password.Length > 12)
+                    return BadRequest(new { message = "Lozinka ne sme biti duža od 12 karaktera" });
+
+
+                // 4. Validacija email-a (atribut [EmailAddress] već radi, ali možemo dodati još proveru)
+                try
+                {
+                    var addr = new System.Net.Mail.MailAddress(dto.Email);
+                    if (addr.Address != dto.Email.Trim())
+                        return BadRequest(new { message = "Neispravna email adresa" });
+                }
+                catch
+                {
+                    return BadRequest(new { message = "Neispravna email adresa" });
+                }
+                if(dto.Email.Length > 30)
+                    return BadRequest(new { message = "Email ne sme biti duži od 30 karaktera" });
+
+                // 5. Provera jedinstvenosti username/email
+                var existingUser = await _context.Users
+                    .FirstOrDefaultAsync(u => u.Username.ToLower() == dto.Username.ToLower() ||
+                                            u.Email.ToLower() == dto.Email.ToLower());
+
+                if (existingUser != null)
+                {
+                    if (existingUser.Username.ToLower() == dto.Username.ToLower())
+                        return BadRequest(new { message = "Korisničko ime je već zauzeto" });
+
+                    return BadRequest(new { message = "Email je već registrovan" });
+                }
+
+
+
+                // 6. Hash lozinke sa BCrypt
+                var hashedPassword = BCrypt.Net.BCrypt.HashPassword(dto.Password);
+
+
+                // 7. Kreiranje novog korisnika
+                var user = new User
+                {
+                    Username = dto.Username.Trim(),
+                    Email = dto.Email.Trim().ToLower(),
+                    Password_Hash = hashedPassword,
+                    Is_Admin = 0 // Podrazumevano nije admin, 0 = korisnik, 1 = admin
+                };
+
+                _context.Users.Add(user);
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation("Uspešno registrovan korisnik: {Username}", user.Username);
 
                 return Ok(new
                 {
-                    success = true,
-                    totalCount = count,
-                    retrievedCount = users.Count,
-                    users = users
+                    message = "Registracija je uspešna",
+                    userId = user.User_Id,
+                    username = user.Username
+                });
+            }
+            catch (DbUpdateException ex)
+            {
+                _logger.LogError(ex, "Database greška pri registraciji korisnika {Username}", dto?.Username);
+                return StatusCode(500, new
+                {
+                    message = "Greška u bazi podataka pri registraciji",
+                    error = ex.InnerException?.Message ?? ex.Message
                 });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Detaljnu grešku pri dohvatanju korisnika");
+                _logger.LogError(ex, "Opšta greška pri registraciji korisnika {Username}", dto?.Username);
                 return StatusCode(500, new
                 {
-                    success = false,
-                    message = "Greška pri dohvatanju korisnika",
-                    error = ex.Message,
-                    innerException = ex.InnerException?.Message,
-                    stackTrace = ex.StackTrace
+                    message = "Neočekivana greška pri registraciji",
+                    error = ex.Message
                 });
             }
         }
 
-        // 4. Test sa eksplicitnim nazivom tabele
-        [HttpGet("test-explicit-table")]
-        public async Task<IActionResult> TestExplicitTable()
+
+        // 3. Login endpoint
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] LoginUserDto dto)
         {
             try
             {
-                // Eksplicitno specificiranje tabele
-                var users = await _context.Users
-                    .FromSqlRaw("SELECT * FROM SKALARR.USERS")
-                    .ToListAsync();
+                if (!ModelState.IsValid)
+                    return BadRequest(new { message = "Neispravni podaci" });
+
+                var user = await _context.Users.FirstOrDefaultAsync(u =>
+                    (dto.Username != null && u.Username.ToLower() == dto.Username.ToLower()) ||
+                    (dto.Email != null && u.Email.ToLower() == dto.Email.ToLower()));
+
+
+                if (user == null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.Password_Hash))
+                {
+                    return Unauthorized(new { message = "Neispravno korisničko ime ili lozinka" });
+                }
 
                 return Ok(new
                 {
-                    success = true,
-                    count = users.Count,
-                    users = users
+                    message = "Uspešna prijava",
+                    userId = user.User_Id,
+                    username = user.Username,
+                    isAdmin = user.Is_Admin == 1
                 });
             }
             catch (Exception ex)
             {
-                return BadRequest(new
-                {
-                    success = false,
-                    message = "Greška sa eksplicitnom tabelom",
-                    error = ex.Message,
-                    innerException = ex.InnerException?.Message
-                });
+                _logger.LogError(ex, "Greška pri prijavi korisnika");
+                return StatusCode(500, new { message = "Greška pri prijavi" });
             }
         }
 
-        // 5. Standardni endpoint
+
+
+
+
+        // Standardni endpoint /api/users za dohvatanje svih korisnika
         [HttpGet]
         public async Task<IActionResult> GetUsers()
         {
@@ -175,40 +220,9 @@ namespace Kviz.Controllers
             }
         }
 
-        // 6. Test informacija o bazi
-        [HttpGet("database-info")]
-        public IActionResult GetDatabaseInfo()
-        {
-            try
-            {
-                var connectionString = _context.Database.GetConnectionString();
-                var providerName = _context.Database.ProviderName;
-
-                return Ok(new
-                {
-                    connectionString = connectionString,
-                    providerName = providerName,
-                    databaseName = _context.Database.GetDbConnection().Database
-                });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new
-                {
-                    message = "Greška pri dobijanju info o bazi",
-                    error = ex.Message
-                });
-            }
-        }
+        
     }
 
-    // Helper klasa za raw SQL rezultate
-    public class UserRawResult
-    {
-        public int USER_ID { get; set; }
-        public string USERNAME { get; set; } = string.Empty;
-        public string EMAIL { get; set; } = string.Empty;
-    }
 }
 
 // DODATNO: Dodajte u Program.cs za detaljno logovanje

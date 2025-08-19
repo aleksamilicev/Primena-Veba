@@ -17,7 +17,6 @@ namespace Kviz.Models
 
         [Required]
         [Column("IS_ADMIN")]
-        [MaxLength(255)]
         public int Is_Admin { get; set; } = 0; // 0 = korisnik, 1 = admin
 
 

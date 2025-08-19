@@ -171,3 +171,4 @@ C:\Users\KORISNIK\Desktop\veb2\Primena-Veba\kviz-back\Kviz\obj\Debug\net8.0\refi
 C:\Users\KORISNIK\Desktop\veb2\Primena-Veba\kviz-back\Kviz\obj\Debug\net8.0\Kviz.pdb
 C:\Users\KORISNIK\Desktop\veb2\Primena-Veba\kviz-back\Kviz\obj\Debug\net8.0\Kviz.genruntimeconfig.cache
 C:\Users\KORISNIK\Desktop\veb2\Primena-Veba\kviz-back\Kviz\obj\Debug\net8.0\ref\Kviz.dll
+C:\Users\KORISNIK\Desktop\veb2\Primena-Veba\kviz-back\Kviz\bin\Debug\net8.0\BCrypt.Net-Next.dll
