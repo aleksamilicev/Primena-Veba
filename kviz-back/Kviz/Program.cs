@@ -11,6 +11,18 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddControllers();
 
+builder.Services.AddControllers().AddJsonOptions(options =>
+{
+    // Rešava problem sa circular reference
+    options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+
+    // Dodatno: zadržava property names kao što su definisani (ne menja ih u camelCase)
+    options.JsonSerializerOptions.PropertyNamingPolicy = null;
+
+    // Ignoriše null vrednosti pri serijalizaciji
+    options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
+});
+
 // Dodaj Swagger/OpenAPI
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

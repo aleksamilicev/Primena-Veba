@@ -73,14 +73,14 @@
         }
       }
     },
-    "/api/Questions/{id}/with-questions": {
+    "/api/Questions/question/{questionId}": {
       "get": {
         "tags": [
           "Questions"
         ],
         "parameters": [
           {
-            "name": "id",
+            "name": "questionId",
             "in": "path",
             "required": true,
             "schema": {
@@ -95,20 +95,152 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/QuizWithQuestionsDto"
+                  "$ref": "#/components/schemas/Question"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/QuizWithQuestionsDto"
+                  "$ref": "#/components/schemas/Question"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/QuizWithQuestionsDto"
+                  "$ref": "#/components/schemas/Question"
                 }
               }
             }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Questions"
+        ],
+        "parameters": [
+          {
+            "name": "questionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateQuestionDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateQuestionDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateQuestionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Questions"
+        ],
+        "parameters": [
+          {
+            "name": "questionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Questions": {
+      "post": {
+        "tags": [
+          "Questions"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateQuestionDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateQuestionDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateQuestionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Question"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Question"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Question"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Questions/quiz/{quizId}/questions": {
+      "delete": {
+        "tags": [
+          "Questions"
+        ],
+        "parameters": [
+          {
+            "name": "quizId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
           }
         }
       }
@@ -556,40 +688,75 @@
   },
   "components": {
     "schemas": {
-      "CreateQuizDto": {
+      "CreateQuestionDto": {
         "required": [
-          "title"
+          "CorrectAnswer",
+          "QuestionText",
+          "QuizId"
         ],
         "type": "object",
         "properties": {
-          "title": {
-            "maxLength": 200,
+          "QuizId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "QuestionText": {
+            "maxLength": 1000,
             "minLength": 1,
             "type": "string"
           },
-          "description": {
-            "maxLength": 1000,
-            "type": "string",
-            "nullable": true
-          },
-          "category": {
-            "maxLength": 100,
-            "type": "string",
-            "nullable": true
-          },
-          "difficultyLevel": {
+          "QuestionType": {
             "maxLength": 50,
             "type": "string",
             "nullable": true
           },
-          "numberOfQuestions": {
+          "DifficultyLevel": {
+            "maxLength": 50,
+            "type": "string",
+            "nullable": true
+          },
+          "CorrectAnswer": {
+            "maxLength": 1000,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateQuizDto": {
+        "required": [
+          "Title"
+        ],
+        "type": "object",
+        "properties": {
+          "Title": {
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "Description": {
+            "maxLength": 1000,
+            "type": "string",
+            "nullable": true
+          },
+          "Category": {
+            "maxLength": 100,
+            "type": "string",
+            "nullable": true
+          },
+          "DifficultyLevel": {
+            "maxLength": 50,
+            "type": "string",
+            "nullable": true
+          },
+          "NumberOfQuestions": {
             "maximum": 99,
             "minimum": 1,
             "type": "integer",
             "format": "int32",
             "nullable": true
           },
-          "timeLimit": {
+          "TimeLimit": {
             "maximum": 999,
             "minimum": 1,
             "type": "integer",
@@ -601,11 +768,11 @@
       },
       "DeleteQuizzesDto": {
         "required": [
-          "quizIds"
+          "QuizIds"
         ],
         "type": "object",
         "properties": {
-          "quizIds": {
+          "QuizIds": {
             "type": "array",
             "items": {
               "type": "integer",
@@ -617,20 +784,20 @@
       },
       "LoginUserDto": {
         "required": [
-          "password"
+          "Password"
         ],
         "type": "object",
         "properties": {
-          "username": {
+          "Username": {
             "type": "string",
             "nullable": true
           },
-          "email": {
+          "Email": {
             "type": "string",
             "format": "email",
             "nullable": true
           },
-          "password": {
+          "Password": {
             "minLength": 1,
             "type": "string"
           }
@@ -639,37 +806,37 @@
       },
       "Question": {
         "required": [
-          "question_Text"
+          "Question_Text"
         ],
         "type": "object",
         "properties": {
-          "question_Id": {
+          "Question_Id": {
             "type": "integer",
             "format": "int32"
           },
-          "quiz_Id": {
+          "Quiz_Id": {
             "type": "integer",
             "format": "int32"
           },
-          "question_Text": {
+          "Question_Text": {
             "minLength": 1,
             "type": "string"
           },
-          "question_Type": {
+          "Question_Type": {
             "maxLength": 255,
             "type": "string",
             "nullable": true
           },
-          "correct_Answer": {
+          "Correct_Answer": {
             "type": "string",
             "nullable": true
           },
-          "difficulty_Level": {
+          "Difficulty_Level": {
             "maxLength": 255,
             "type": "string",
             "nullable": true
           },
-          "quiz": {
+          "Quiz": {
             "$ref": "#/components/schemas/Quiz"
           }
         },
@@ -678,23 +845,23 @@
       "QuestionDto": {
         "type": "object",
         "properties": {
-          "questionId": {
+          "QuestionId": {
             "type": "integer",
             "format": "int32"
           },
-          "quizId": {
+          "QuizId": {
             "type": "integer",
             "format": "int32"
           },
-          "questionText": {
+          "QuestionText": {
             "type": "string",
             "nullable": true
           },
-          "questionType": {
+          "QuestionType": {
             "type": "string",
             "nullable": true
           },
-          "difficultyLevel": {
+          "DifficultyLevel": {
             "type": "string",
             "nullable": true
           }
@@ -703,44 +870,44 @@
       },
       "Quiz": {
         "required": [
-          "title"
+          "Title"
         ],
         "type": "object",
         "properties": {
-          "quiz_Id": {
+          "Quiz_Id": {
             "type": "integer",
             "format": "int32"
           },
-          "title": {
+          "Title": {
             "maxLength": 255,
             "minLength": 1,
             "type": "string"
           },
-          "description": {
+          "Description": {
             "type": "string",
             "nullable": true
           },
-          "number_Of_Questions": {
+          "Number_Of_Questions": {
             "type": "integer",
             "format": "int32",
             "nullable": true
           },
-          "category": {
+          "Category": {
             "maxLength": 255,
             "type": "string",
             "nullable": true
           },
-          "difficulty_Level": {
+          "Difficulty_Level": {
             "maxLength": 255,
             "type": "string",
             "nullable": true
           },
-          "time_Limit": {
+          "Time_Limit": {
             "type": "integer",
             "format": "int32",
             "nullable": true
           },
-          "questions": {
+          "Questions": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/Question"
@@ -750,67 +917,24 @@
         },
         "additionalProperties": false
       },
-      "QuizWithQuestionsDto": {
-        "type": "object",
-        "properties": {
-          "quizId": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "title": {
-            "type": "string",
-            "nullable": true
-          },
-          "description": {
-            "type": "string",
-            "nullable": true
-          },
-          "numberOfQuestions": {
-            "type": "integer",
-            "format": "int32",
-            "nullable": true
-          },
-          "category": {
-            "type": "string",
-            "nullable": true
-          },
-          "difficultyLevel": {
-            "type": "string",
-            "nullable": true
-          },
-          "timeLimit": {
-            "type": "integer",
-            "format": "int32",
-            "nullable": true
-          },
-          "questions": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/QuestionDto"
-            },
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
       "RegisterUserDto": {
         "required": [
-          "email",
-          "password",
-          "username"
+          "Email",
+          "Password",
+          "Username"
         ],
         "type": "object",
         "properties": {
-          "username": {
+          "Username": {
             "minLength": 1,
             "type": "string"
           },
-          "email": {
+          "Email": {
             "minLength": 1,
             "type": "string",
             "format": "email"
           },
-          "password": {
+          "Password": {
             "minLength": 1,
             "type": "string"
           }
@@ -820,16 +944,42 @@
       "UpdateProfileDto": {
         "type": "object",
         "properties": {
-          "email": {
+          "Email": {
             "maxLength": 30,
             "minLength": 0,
             "type": "string",
             "format": "email",
             "nullable": true
           },
-          "profileImageUrl": {
+          "ProfileImageUrl": {
             "maxLength": 255,
             "minLength": 0,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateQuestionDto": {
+        "type": "object",
+        "properties": {
+          "QuizId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "QuestionText": {
+            "maxLength": 1000,
+            "type": "string",
+            "nullable": true
+          },
+          "QuestionType": {
+            "maxLength": 50,
+            "type": "string",
+            "nullable": true
+          },
+          "DifficultyLevel": {
+            "maxLength": 50,
             "type": "string",
             "nullable": true
           }
@@ -839,34 +989,34 @@
       "UpdateQuizDto": {
         "type": "object",
         "properties": {
-          "title": {
+          "Title": {
             "maxLength": 200,
             "type": "string",
             "nullable": true
           },
-          "description": {
+          "Description": {
             "maxLength": 1000,
             "type": "string",
             "nullable": true
           },
-          "category": {
+          "Category": {
             "maxLength": 100,
             "type": "string",
             "nullable": true
           },
-          "difficultyLevel": {
+          "DifficultyLevel": {
             "maxLength": 50,
             "type": "string",
             "nullable": true
           },
-          "numberOfQuestions": {
+          "NumberOfQuestions": {
             "maximum": 99,
             "minimum": 1,
             "type": "integer",
             "format": "int32",
             "nullable": true
           },
-          "timeLimit": {
+          "TimeLimit": {
             "maximum": 999,
             "minimum": 1,
             "type": "integer",
@@ -879,20 +1029,20 @@
       "WeatherForecast": {
         "type": "object",
         "properties": {
-          "date": {
+          "Date": {
             "type": "string",
             "format": "date"
           },
-          "temperatureC": {
+          "TemperatureC": {
             "type": "integer",
             "format": "int32"
           },
-          "temperatureF": {
+          "TemperatureF": {
             "type": "integer",
             "format": "int32",
             "readOnly": true
           },
-          "summary": {
+          "Summary": {
             "type": "string",
             "nullable": true
           }

@@ -108,6 +108,7 @@ namespace Kviz.Controllers
                         QuestionText = q.Question_Text,
                         QuestionType = q.Question_Type,
                         DifficultyLevel = q.Difficulty_Level
+                        // ovde ne vracamo CorrectAnswer jer korisnik ne treba da vidi tačan odgovor
                     })
                     .ToListAsync();
 
