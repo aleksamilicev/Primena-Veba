@@ -1,7 +1,9 @@
 ﻿using Kviz.DTOs;
 using Kviz.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace Kviz.Controllers
 {
@@ -122,8 +124,227 @@ namespace Kviz.Controllers
             }
         }
 
+        // Endpoint za dobijanje kviza po ID
+        [HttpGet("{id}")]
+        public async Task<ActionResult<Quiz>> GetQuiz(int id)
+        {
+            try
+            {
+                var quiz = await _context.Quizzes.FindAsync(id);
+                if (quiz == null)
+                {
+                    return NotFound($"Kviz sa ID {id} ne postoji");
+                }
+
+                return Ok(quiz);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Greška pri dohvatanju kviza sa ID {id}");
+                return StatusCode(500, new { message = "Greška pri dohvatanju kviza", error = ex.Message });
+            }
+        }
 
 
+
+        // ==================== ADMIN CRUD OPERACIJE ====================
+
+        // CREATE - Kreiranje novog kviza (samo admin)
+        [HttpPost]
+        [Authorize]
+        public async Task<ActionResult<Quiz>> CreateQuiz([FromBody] CreateQuizDto createQuizDto)
+        {
+            try
+            {
+                if (!IsCurrentUserAdmin())
+                {
+                    return Forbid("Samo administratori mogu kreirati kvizove");
+                }
+
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+
+                var quiz = new Quiz
+                {
+                    Title = createQuizDto.Title,
+                    Description = createQuizDto.Description,
+                    Category = createQuizDto.Category,
+                    Difficulty_Level = createQuizDto.DifficultyLevel,
+                    Number_Of_Questions = createQuizDto.NumberOfQuestions,
+                    Time_Limit = createQuizDto.TimeLimit
+                };
+
+                _context.Quizzes.Add(quiz);
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation($"Admin kreirao novi kviz sa ID {quiz.Quiz_Id}");
+
+                return CreatedAtAction(nameof(GetQuiz), new { id = quiz.Quiz_Id }, quiz);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Greška pri kreiranju kviza");
+                return StatusCode(500, new { message = "Greška pri kreiranju kviza", error = ex.Message });
+            }
+        }
+
+        // UPDATE - Ažuriranje postojećeg kviza (samo admin)
+        [HttpPut("{id}")]
+        [Authorize]
+        public async Task<IActionResult> UpdateQuiz(int id, [FromBody] UpdateQuizDto updateQuizDto)
+        {
+            try
+            {
+                if (!IsCurrentUserAdmin())
+                {
+                    return Forbid("Samo administratori mogu ažurirati kvizove");
+                }
+
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+
+                var quiz = await _context.Quizzes.FindAsync(id);
+                if (quiz == null)
+                {
+                    return NotFound($"Kviz sa ID {id} ne postoji");
+                }
+
+                // Ažuriranje polja
+                quiz.Title = updateQuizDto.Title ?? quiz.Title;
+                quiz.Description = updateQuizDto.Description ?? quiz.Description;
+                quiz.Category = updateQuizDto.Category ?? quiz.Category;
+                quiz.Difficulty_Level = updateQuizDto.DifficultyLevel ?? quiz.Difficulty_Level;
+                quiz.Number_Of_Questions = updateQuizDto.NumberOfQuestions ?? quiz.Number_Of_Questions;
+                quiz.Time_Limit = updateQuizDto.TimeLimit ?? quiz.Time_Limit;
+
+                _context.Quizzes.Update(quiz);
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation($"Admin ažurirao kviz sa ID {id}");
+
+                return Ok(quiz);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Greška pri ažuriranju kviza sa ID {id}");
+                return StatusCode(500, new { message = "Greška pri ažuriranju kviza", error = ex.Message });
+            }
+        }
+
+        // DELETE - Brisanje kviza (samo admin)
+        [HttpDelete("{id}")]
+        [Authorize]
+        public async Task<IActionResult> DeleteQuiz(int id)
+        {
+            try
+            {
+                if (!IsCurrentUserAdmin())
+                {
+                    return Forbid("Samo administratori mogu brisati kvizove");
+                }
+
+                var quiz = await _context.Quizzes
+                    .Include(q => q.Questions) // Uključujemo pitanja za proveru
+                    .FirstOrDefaultAsync(q => q.Quiz_Id == id);
+
+                if (quiz == null)
+                {
+                    return NotFound($"Kviz sa ID {id} ne postoji");
+                }
+
+                // Prvo brišemo sva pitanja povezana sa kvizom
+                if (quiz.Questions != null && quiz.Questions.Any())
+                {
+                    _context.Questions.RemoveRange(quiz.Questions);
+                    _logger.LogInformation($"Obrisano {quiz.Questions.Count()} pitanja za kviz sa ID {id}");
+                }
+
+                // Zatim brišemo kviz
+                _context.Quizzes.Remove(quiz);
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation($"Admin obrisao kviz sa ID {id}");
+
+                return Ok(new { message = $"Kviz sa ID {id} je uspešno obrisan" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Greška pri brisanju kviza sa ID {id}");
+                return StatusCode(500, new { message = "Greška pri brisanju kviza", error = ex.Message });
+            }
+        }
+
+        // BULK DELETE - Brisanje više kvizova odjednom (samo admin)
+        [HttpDelete("bulk")]
+        [Authorize]
+        public async Task<IActionResult> DeleteQuizzes([FromBody] DeleteQuizzesDto deleteQuizzesDto)
+        {
+            try
+            {
+                if (!IsCurrentUserAdmin())
+                {
+                    return Forbid("Samo administratori mogu brisati kvizove");
+                }
+
+                if (deleteQuizzesDto?.QuizIds == null || !deleteQuizzesDto.QuizIds.Any())
+                {
+                    return BadRequest("Lista ID-jeva kvizova je obavezna");
+                }
+
+                var quizzes = await _context.Quizzes
+                    .Include(q => q.Questions)
+                    .Where(q => deleteQuizzesDto.QuizIds.Contains(q.Quiz_Id))
+                    .ToListAsync();
+
+                if (!quizzes.Any())
+                {
+                    return NotFound("Nijedan od navedenih kvizova nije pronađen");
+                }
+
+                var deletedCount = 0;
+                foreach (var quiz in quizzes)
+                {
+                    // Prvo brišemo pitanja
+                    if (quiz.Questions != null && quiz.Questions.Any())
+                    {
+                        _context.Questions.RemoveRange(quiz.Questions);
+                    }
+
+                    _context.Quizzes.Remove(quiz);
+                    deletedCount++;
+                }
+
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation($"Admin obrisao {deletedCount} kvizova");
+
+                return Ok(new { message = $"Uspešno obrisano {deletedCount} kvizova", deletedCount });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Greška pri bulk brisanju kvizova");
+                return StatusCode(500, new { message = "Greška pri brisanju kvizova", error = ex.Message });
+            }
+        }
+
+
+
+        // Helper metode
+        private int? GetCurrentUserId()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            return int.TryParse(userIdClaim, out var userId) ? userId : null;
+        }
+
+        private bool IsCurrentUserAdmin()
+        {
+            var isAdminClaim = User.FindFirst("IsAdmin")?.Value;
+            return isAdminClaim == "1";
+        }
 
     }
 }

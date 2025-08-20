@@ -97,6 +97,95 @@
   },
   {
     "ContainingType": "Kviz.Controllers.QuizzesController",
+    "Method": "CreateQuiz",
+    "RelativePath": "api/Quizzes",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "createQuizDto",
+        "Type": "Kviz.DTOs.CreateQuizDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "Kviz.Models.Quiz",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "Kviz.Controllers.QuizzesController",
+    "Method": "GetQuiz",
+    "RelativePath": "api/Quizzes/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "Kviz.Models.Quiz",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "Kviz.Controllers.QuizzesController",
+    "Method": "UpdateQuiz",
+    "RelativePath": "api/Quizzes/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "updateQuizDto",
+        "Type": "Kviz.DTOs.UpdateQuizDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Kviz.Controllers.QuizzesController",
+    "Method": "DeleteQuiz",
+    "RelativePath": "api/Quizzes/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Kviz.Controllers.QuizzesController",
     "Method": "GetQuestionsByQuizId",
     "RelativePath": "api/Quizzes/{quizId}/questions",
     "HttpMethod": "GET",
@@ -120,6 +209,22 @@
         "StatusCode": 200
       }
     ]
+  },
+  {
+    "ContainingType": "Kviz.Controllers.QuizzesController",
+    "Method": "DeleteQuizzes",
+    "RelativePath": "api/Quizzes/bulk",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "deleteQuizzesDto",
+        "Type": "Kviz.DTOs.DeleteQuizzesDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
   },
   {
     "ContainingType": "Kviz.Controllers.UsersController",
