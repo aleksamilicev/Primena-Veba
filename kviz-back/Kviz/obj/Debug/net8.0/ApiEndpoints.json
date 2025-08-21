@@ -18,6 +18,48 @@
     ]
   },
   {
+    "ContainingType": "Kviz.Controllers.ActiveAttemptsController",
+    "Method": "GetMyActiveAttempts",
+    "RelativePath": "api/active-attempts",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Kviz.Controllers.ActiveAttemptsController",
+    "Method": "AbandonAttempt",
+    "RelativePath": "api/active-attempts/{attemptId}/abandon",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "attemptId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Kviz.Controllers.ActiveAttemptsController",
+    "Method": "ResumeAttempt",
+    "RelativePath": "api/active-attempts/{attemptId}/resume",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "attemptId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "Kviz.Controllers.QuestionsController",
     "Method": "GetAllQuestions",
     "RelativePath": "api/Questions",
@@ -157,6 +199,85 @@
     "Method": "DeleteAllQuestionsForQuiz",
     "RelativePath": "api/Questions/quiz/{quizId}/questions",
     "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "quizId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Kviz.Controllers.QuizTakingController",
+    "Method": "FinishQuiz",
+    "RelativePath": "api/quiz-taking/{attemptId}/finish",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "attemptId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "finishQuizDto",
+        "Type": "Kviz.DTOs.FinishQuizDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Kviz.Controllers.QuizTakingController",
+    "Method": "GetAttemptStatus",
+    "RelativePath": "api/quiz-taking/{attemptId}/status",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "attemptId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Kviz.Controllers.QuizTakingController",
+    "Method": "SubmitAnswer",
+    "RelativePath": "api/quiz-taking/{quizId}/{questionId}/answer",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "quizId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "questionId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "submitAnswerDto",
+        "Type": "Kviz.DTOs.SubmitAnswerDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Kviz.Controllers.QuizTakingController",
+    "Method": "StartQuiz",
+    "RelativePath": "api/quiz-taking/{quizId}/start",
+    "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
     "Parameters": [
@@ -444,6 +565,32 @@
         "StatusCode": 200
       }
     ]
+  },
+  {
+    "ContainingType": "Kviz.Controllers.QuizzesController",
+    "Method": "SubmitAnswer",
+    "RelativePath": "api/Quizzes/{quizId}/questions/{questionId}/answer",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "quizId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "questionId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "submitAnswerDto",
+        "Type": "Kviz.DTOs.SubmitAnswerDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
   },
   {
     "ContainingType": "Kviz.Controllers.QuizzesController",

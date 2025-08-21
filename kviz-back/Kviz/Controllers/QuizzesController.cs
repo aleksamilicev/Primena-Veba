@@ -125,6 +125,146 @@ namespace Kviz.Controllers
             }
         }
 
+        #region Check Answer Helper Method
+        private bool CheckAnswer(string questionType, string correctAnswer, string userAnswer)
+        {
+            if (string.IsNullOrEmpty(correctAnswer) || string.IsNullOrEmpty(userAnswer))
+                return false;
+
+            return questionType?.ToLower() switch
+            {
+                "multiple-choice" => CheckMultipleChoiceAnswer(correctAnswer, userAnswer),
+                "multiple-select" => CheckMultipleSelectAnswer(correctAnswer, userAnswer),
+                "true-false" => CheckTrueFalseAnswer(correctAnswer, userAnswer),
+                "fill-in-the-blank" => CheckFillInBlankAnswer(correctAnswer, userAnswer),
+                _ => false
+            };
+        }
+
+        private bool CheckMultipleChoiceAnswer(string correctAnswer, string userAnswer)
+        {
+            // Format: "A) Opcija 1 | B) Opcija 2 | C) Opcija 3 [CORRECT: A]"
+            try
+            {
+                var correctPart = correctAnswer.Split("[CORRECT:").LastOrDefault()?.Replace("]", "").Trim();
+                return correctPart?.Equals(userAnswer.Trim(), StringComparison.OrdinalIgnoreCase) == true;
+            }
+            catch
+            {
+                return correctAnswer.Trim().Equals(userAnswer.Trim(), StringComparison.OrdinalIgnoreCase);
+            }
+        }
+
+        private bool CheckMultipleSelectAnswer(string correctAnswer, string userAnswer)
+        {
+            // Format: "A,C,D" (više tačnih odgovora)
+            try
+            {
+                var correctAnswers = correctAnswer.Split(',').Select(a => a.Trim()).OrderBy(a => a);
+                var userAnswers = userAnswer.Split(',').Select(a => a.Trim()).OrderBy(a => a);
+
+                return correctAnswers.SequenceEqual(userAnswers);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private bool CheckTrueFalseAnswer(string correctAnswer, string userAnswer)
+        {
+            var normalizedCorrect = correctAnswer.ToLower().Trim();
+            var normalizedUser = userAnswer.ToLower().Trim();
+
+            // Mapiranje različitih formata na standardne vrednosti
+            var trueValues = new[] { "true", "tačno", "tacno", "да", "da", "1", "yes" };
+            var falseValues = new[] { "false", "netačno", "netacno", "не", "ne", "0", "no" };
+
+            bool isCorrectTrue = trueValues.Contains(normalizedCorrect);
+            bool isUserTrue = trueValues.Contains(normalizedUser);
+            bool isCorrectFalse = falseValues.Contains(normalizedCorrect);
+            bool isUserFalse = falseValues.Contains(normalizedUser);
+
+            return (isCorrectTrue && isUserTrue) || (isCorrectFalse && isUserFalse);
+        }
+
+        private bool CheckFillInBlankAnswer(string correctAnswer, string userAnswer)
+        {
+            // Može podržavati više varijanti odgovora odvojenih sa "|"
+            var correctVariants = correctAnswer.Split('|').Select(v => v.Trim().ToLower());
+            var normalizedUserAnswer = userAnswer.Trim().ToLower();
+
+            return correctVariants.Any(variant => variant == normalizedUserAnswer);
+        }
+        #endregion
+
+
+        [HttpPost("{quizId}/questions/{questionId}/answer")]
+        public async Task<IActionResult> SubmitAnswer(int quizId, int questionId, [FromBody] SubmitAnswerDto submitAnswerDto)
+        {
+            var userId = GetCurrentUserId();
+            if (userId == null)
+                return Unauthorized("Korisnik nije autentifikovan");
+
+            try
+            {
+                // 1. Proveri kviz i pitanje
+                var quiz = await _context.Quizzes.FindAsync(quizId);
+                if (quiz == null)
+                    return NotFound($"Kviz sa ID {quizId} ne postoji");
+
+                var question = await _context.Questions.FindAsync(questionId);
+                if (question == null)
+                    return NotFound($"Pitanje sa ID {questionId} ne postoji");
+
+                if (question.Quiz_Id != quizId)
+                    return BadRequest("Pitanje ne pripada prosleđenom kvizu");
+
+                // 2. Proveri da li je korisnik već odgovorio na ovo pitanje
+                var existingAnswer = await _context.Answers
+                    .Where(a => a.User_Id == userId.Value && a.Question_Id == questionId && a.Quiz_Id == quizId)
+                    .FirstOrDefaultAsync();
+
+                if (existingAnswer != null)
+                    return BadRequest("Već ste odgovorili na ovo pitanje");
+
+                // 3. Proveri tačnost
+                bool isCorrect = CheckAnswer(question.Question_Type, question.Correct_Answer, submitAnswerDto.UserAnswer);
+
+                // 4. Sačuvaj odgovor
+                var answer = new Answer
+                {
+                    User_Id = userId.Value,
+                    Question_Id = questionId,
+                    Quiz_Id = quizId, // NOVO
+                    User_Answer = submitAnswerDto.UserAnswer,
+                    Is_Correct = isCorrect ? 1 : 0
+                };
+
+                _context.Answers.Add(answer);
+                await _context.SaveChangesAsync();
+
+                return Ok(new
+                {
+                    AnswerId = answer.Answer_Id,
+                    IsCorrect = isCorrect,
+                    QuestionId = questionId,
+                    QuizId = quizId,
+                    Message = isCorrect ? "Tačan odgovor!" : "Netačan odgovor."
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Greška pri čuvanju odgovora: {ex.Message}");
+            }
+        }
+
+
+
+
+
+
+
         // Endpoint za dobijanje kviza po ID
         [HttpGet("{id}")]
         public async Task<ActionResult<Quiz>> GetQuiz(int id)
@@ -331,6 +471,187 @@ namespace Kviz.Controllers
                 return StatusCode(500, new { message = "Greška pri brisanju kvizova", error = ex.Message });
             }
         }
+
+
+
+
+
+
+
+
+
+
+        // ==================== Resavanje kviza ====================
+        // GET: api/quizzes/available - Kvizovi dostupni za rešavanje sa statistikama korisnika
+        /*
+        [HttpGet("available")]
+        [Authorize]
+        public async Task<ActionResult<List<QuizForTakingDto>>> GetAvailableQuizzes()
+        {
+            var userId = GetCurrentUserId();
+            if (userId == null)
+                return Unauthorized("Korisnik nije autentifikovan");
+
+            try
+            {
+                var quizzes = await _context.Quizzes
+                    .Select(q => new QuizForTakingDto
+                    {
+                        QuizId = q.Quiz_Id,
+                        Title = q.Title,
+                        Description = q.Description,
+                        Category = q.Category,
+                        DifficultyLevel = q.Difficulty_Level,
+                        TotalQuestions = _context.Questions.Count(quest => quest.Quiz_Id == q.Quiz_Id),
+                        UserAttempts = _context.UserQuizAttempts.Count(attempt => attempt.Quiz_Id == q.Quiz_Id && attempt.User_Id == userId),
+                        BestScore = _context.QuizResults
+                            .Where(r => r.Quiz_Id == q.Quiz_Id && r.User_Id == userId)
+                            .Max(r => (double?)r.Score_Percentage),
+                        LastAttempt = _context.UserQuizAttempts
+                            .Where(a => a.Quiz_Id == q.Quiz_Id && a.User_Id == userId)
+                            .OrderByDescending(a => a.Attempt_Date)
+                            .Select(a => (DateTime?)a.Attempt_Date)
+                            .FirstOrDefault(),
+                        CanTakeQuiz = true // Možete dodati logiku za ograničavanje pristupa
+                    })
+                    .Where(q => q.TotalQuestions > 0) // Samo kvizovi koji imaju pitanja
+                    .OrderBy(q => q.Category)
+                    .ThenBy(q => q.Title)
+                    .ToListAsync();
+
+                return Ok(quizzes);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Greška pri dohvatanju dostupnih kvizova za korisnika {UserId}", userId);
+                return StatusCode(500, $"Greška pri dohvatanju kvizova: {ex.Message}");
+            }
+        }
+
+
+
+        // GET: api/quizzes/{quizId}/preview - Pregled kviza pre početka
+        [HttpGet("{quizId}/preview")]
+        [Authorize]
+        public async Task<ActionResult<QuizPreviewDto>> GetQuizPreview(int quizId)
+        {
+            var userId = GetCurrentUserId();
+            if (userId == null)
+                return Unauthorized("Korisnik nije autentifikovan");
+
+            try
+            {
+                var quiz = await _context.Quizzes.FindAsync(quizId);
+                if (quiz == null)
+                    return NotFound($"Kviz sa ID {quizId} ne postoji");
+
+                var totalQuestions = await _context.Questions.CountAsync(q => q.Quiz_Id == quizId);
+                if (totalQuestions == 0)
+                    return BadRequest("Kviz nema pitanja i ne može se pokrenuti");
+
+                var userAttempts = await _context.UserQuizAttempts
+                    .Where(a => a.Quiz_Id == quizId && a.User_Id == userId)
+                    .OrderByDescending(a => a.Attempt_Date)
+                    .ToListAsync();
+
+                var userResults = await _context.QuizResults
+                    .Where(r => r.Quiz_Id == quizId && r.User_Id == userId)
+                    .OrderByDescending(r => r.Score_Percentage)
+                    .ToListAsync();
+
+                var questionTypes = await _context.Questions
+                    .Where(q => q.Quiz_Id == quizId)
+                    .GroupBy(q => q.Question_Type)
+                    .Select(g => new { Type = g.Key, Count = g.Count() })
+                    .ToListAsync();
+
+                var difficultyLevels = await _context.Questions
+                    .Where(q => q.Quiz_Id == quizId)
+                    .GroupBy(q => q.Difficulty_Level)
+                    .Select(g => new { Level = g.Key, Count = g.Count() })
+                    .ToListAsync();
+
+                var preview = new QuizPreviewDto
+                {
+                    QuizId = quiz.Quiz_Id,
+                    Title = quiz.Title,
+                    Description = quiz.Description,
+                    Category = quiz.Category,
+                    DifficultyLevel = quiz.Difficulty_Level,
+                    TotalQuestions = totalQuestions,
+                    QuestionTypes = questionTypes.ToDictionary(qt => qt.Type ?? "Nedefinirano", qt => qt.Count),
+                    DifficultyBreakdown = difficultyLevels.ToDictionary(dl => dl.Level ?? "Nedefinirano", dl => dl.Count),
+                    UserStats = new QuizUserStatsDto
+                    {
+                        TotalAttempts = userAttempts.Count,
+                        BestScore = userResults.Any() ? userResults.Max(r => r.Score_Percentage) : null,
+                        AverageScore = userResults.Any() ? Math.Round(userResults.Average(r => r.Score_Percentage), 2) : null,
+                        LastAttemptDate = userAttempts.FirstOrDefault()?.Attempt_Date,
+                        LastScore = userResults.OrderByDescending(r => r.Completed_At).FirstOrDefault()?.Score_Percentage
+                    },
+                    CanStart = true,
+                    EstimatedTimeMinutes = totalQuestions * 1.5 // Procena 1.5 min po pitanju
+                };
+
+                return Ok(preview);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Greška pri dohvatanju pregleda kviza {QuizId} za korisnika {UserId}", quizId, userId);
+                return StatusCode(500, $"Greška pri dohvatanju pregleda kviza: {ex.Message}");
+            }
+        }
+
+        // GET: api/quizzes/{quizId}/my-history - Istorija pokušaja korisnika za kviz
+        [HttpGet("{quizId}/my-history")]
+        [Authorize]
+        public async Task<ActionResult<List<QuizAttemptHistoryDto>>> GetMyQuizHistory(int quizId)
+        {
+            var userId = GetCurrentUserId();
+            if (userId == null)
+                return Unauthorized("Korisnik nije autentifikovan");
+
+            try
+            {
+                var history = await _context.UserQuizAttempts
+                    .Where(a => a.Quiz_Id == quizId && a.User_Id == userId)
+                    .Join(_context.QuizResults,
+                          attempt => attempt.Attempt_Id,
+                          result => result.Attempt_Id,
+                          (attempt, result) => new QuizAttemptHistoryDto
+                          {
+                              AttemptId = attempt.Attempt_Id,
+                              AttemptNumber = attempt.Attempt_Number,
+                              AttemptDate = (DateTime)attempt.Attempt_Date,
+                              Score = result.Score_Percentage,
+                              CorrectAnswers = result.Correct_Answers,
+                              TotalQuestions = result.Total_Questions,
+                              TimeTaken = result.Time_Taken,
+                              CompletedAt = (DateTime)result.Completed_At
+                          })
+                    .OrderByDescending(h => h.AttemptDate)
+                    .ToListAsync();
+
+                return Ok(history);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Greška pri dohvatanju istorije kviza {QuizId} za korisnika {UserId}", quizId, userId);
+                return StatusCode(500, $"Greška pri dohvatanju istorije: {ex.Message}");
+            }
+        }
+
+
+
+
+
+
+
+
+
+
+        */
+
 
 
 

@@ -31,5 +31,8 @@ namespace Kviz.Models
         // Navigation properties
         [ForeignKey("Quiz_Id")]
         public virtual Quiz Quiz { get; set; } = null!;
+
+
+        public ICollection<Answer> Answers { get; set; }
     }
 }

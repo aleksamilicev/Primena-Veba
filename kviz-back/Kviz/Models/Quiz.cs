@@ -34,5 +34,9 @@ namespace Kviz.Models
 
         // Navigation properties
         public virtual ICollection<Question> Questions { get; set; } = new List<Question>();
+
+        public ICollection<Answer> Answers { get; set; }
+        public ICollection<UserQuizAttempt> QuizAttempts { get; set; }
+        public ICollection<QuizResult> QuizResults { get; set; }
     }
 }

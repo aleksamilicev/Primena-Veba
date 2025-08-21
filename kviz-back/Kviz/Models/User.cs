@@ -33,5 +33,13 @@ namespace Kviz.Models
         [Column("PROFILE_IMAGE_URL")]
         [MaxLength(255)]
         public string? Profile_Image_Url { get; set; }
+
+
+
+        // Navigation properties
+        public ICollection<Answer> Answers { get; set; }
+        public ICollection<UserQuizAttempt> QuizAttempts { get; set; }
+        public ICollection<QuizResult> QuizResults { get; set; }
+
     }
 }

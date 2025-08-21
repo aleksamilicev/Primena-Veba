@@ -23,10 +23,18 @@ namespace Kviz.Models
         public DateTime? Attempt_Date { get; set; }
 
         // Navigation properties
-        [ForeignKey("User_Id")]
-        public virtual User User { get; set; } = null!;
+        //public User User { get; set; }
+        //public Quiz Quiz { get; set; }
+        public ICollection<QuizResult> QuizResults { get; set; }
 
-        [ForeignKey("Quiz_Id")]
-        public virtual Quiz Quiz { get; set; } = null!;
+        // Navigation properties
+        [ForeignKey(nameof(User_Id))]
+        public virtual User User { get; set; }
+
+        [ForeignKey(nameof(Quiz_Id))]
+        public virtual Quiz Quiz { get; set; }
+
+        public virtual ICollection<Answer> Answers { get; set; } = new List<Answer>();
+
     }
 }

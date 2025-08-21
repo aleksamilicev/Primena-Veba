@@ -18,128 +18,176 @@ namespace Kviz.Models
         {
             base.OnModelCreating(modelBuilder);
 
-            // Eksplicitno konfigurisanje identity kolona za Oracle
-            modelBuilder.Entity<User>()
-                .Property(e => e.User_Id)
-                .ValueGeneratedOnAdd();
+            // ===== Identity kolone =====
+            modelBuilder.Entity<User>().Property(u => u.User_Id).ValueGeneratedOnAdd();
+            modelBuilder.Entity<Quiz>().Property(q => q.Quiz_Id).ValueGeneratedOnAdd();
+            modelBuilder.Entity<Question>().Property(q => q.Question_Id).ValueGeneratedOnAdd();
+            modelBuilder.Entity<Answer>().Property(a => a.Answer_Id).ValueGeneratedOnAdd();
+            modelBuilder.Entity<UserQuizAttempt>().Property(a => a.Attempt_Id).ValueGeneratedOnAdd();
+            modelBuilder.Entity<QuizResult>().Property(r => r.Result_Id).ValueGeneratedOnAdd();
+            modelBuilder.Entity<Ranking>().Property(r => r.Ranking_Id).ValueGeneratedOnAdd();
 
-            modelBuilder.Entity<Quiz>()
-                .Property(e => e.Quiz_Id)
-                .ValueGeneratedOnAdd();
+            // ===== User tabela =====
+            modelBuilder.Entity<User>(entity =>
+            {
+                entity.ToTable("USERS");
+                entity.HasKey(u => u.User_Id);
+            });
 
-            modelBuilder.Entity<Question>()
-                .Property(e => e.Question_Id)
-                .ValueGeneratedOnAdd();
+            // ===== Quiz tabela =====
+            modelBuilder.Entity<Quiz>(entity =>
+            {
+                entity.ToTable("QUIZZES");
+                entity.HasKey(q => q.Quiz_Id);
+            });
 
-            modelBuilder.Entity<Answer>()
-                .Property(e => e.Answer_Id)
-                .ValueGeneratedOnAdd();
-
-            modelBuilder.Entity<QuizResult>()
-                .Property(e => e.Result_Id)
-                .ValueGeneratedOnAdd();
-
-            modelBuilder.Entity<UserQuizAttempt>()
-                .Property(e => e.Attempt_Id)
-                .ValueGeneratedOnAdd();
-
-            modelBuilder.Entity<Ranking>()
-                .Property(e => e.Ranking_Id)
-                .ValueGeneratedOnAdd();
-
-            // Konfigurisanje relacija
-            modelBuilder.Entity<Question>()
-                .HasOne(q => q.Quiz)
-                .WithMany(quiz => quiz.Questions)
-                .HasForeignKey(q => q.Quiz_Id)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<Answer>()
-                .HasOne(a => a.User)
-                .WithMany()
-                .HasForeignKey(a => a.User_Id)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<Answer>()
-                .HasOne(a => a.Question)
-                .WithMany()
-                .HasForeignKey(a => a.Question_Id)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<UserQuizAttempt>()
-                .HasOne(ua => ua.User)
-                .WithMany()
-                .HasForeignKey(ua => ua.User_Id)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<UserQuizAttempt>()
-                .HasOne(ua => ua.Quiz)
-                .WithMany()
-                .HasForeignKey(ua => ua.Quiz_Id)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<QuizResult>()
-                .HasOne(qr => qr.User)
-                .WithMany()
-                .HasForeignKey(qr => qr.User_Id)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<QuizResult>()
-                .HasOne(qr => qr.Quiz)
-                .WithMany()
-                .HasForeignKey(qr => qr.Quiz_Id)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<QuizResult>()
-                .HasOne(qr => qr.UserQuizAttempt)
-                .WithMany()
-                .HasForeignKey(qr => qr.Attempt_Id)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<Ranking>()
-                .HasOne(r => r.User)
-                .WithMany()
-                .HasForeignKey(r => r.User_Id)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<Ranking>()
-                .HasOne(r => r.Quiz)
-                .WithMany()
-                .HasForeignKey(r => r.Quiz_Id)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            // Konfiguracija za Question tabelu
+            // ===== Question tabela =====
             modelBuilder.Entity<Question>(entity =>
             {
                 entity.ToTable("QUESTIONS");
-                entity.HasKey(e => e.Question_Id);
+                entity.HasKey(q => q.Question_Id);
 
-                entity.Property(e => e.Question_Id)
-                    .HasColumnName("QUESTION_ID")
-                    .ValueGeneratedOnAdd();
+                entity.Property(q => q.Question_Id).HasColumnName("QUESTION_ID");
+                entity.Property(q => q.Quiz_Id).HasColumnName("QUIZ_ID").IsRequired();
+                entity.Property(q => q.Question_Text).HasColumnName("QUESTION_TEXT").IsRequired();
+                entity.Property(q => q.Question_Type).HasColumnName("QUESTION_TYPE");
+                entity.Property(q => q.Correct_Answer).HasColumnName("CORRECT_ANSWER");
+                entity.Property(q => q.Difficulty_Level).HasColumnName("DIFFICULTY_LEVEL");
 
-                entity.Property(e => e.Quiz_Id)
-                    .HasColumnName("QUIZ_ID")
-                    .IsRequired();
+                entity.HasOne(q => q.Quiz)
+                      .WithMany(quiz => quiz.Questions)
+                      .HasForeignKey(q => q.Quiz_Id)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
 
-                entity.Property(e => e.Question_Text)
-                    .HasColumnName("QUESTION_TEXT")
-                    .IsRequired();
+            // ===== UserQuizAttempt tabela =====
+            modelBuilder.Entity<UserQuizAttempt>(entity =>
+            {
+                entity.ToTable("USER_QUIZ_ATTEMPTS");
+                entity.HasKey(a => a.Attempt_Id);
 
-                entity.Property(e => e.Question_Type)
-                    .HasColumnName("QUESTION_TYPE");
+                entity.Property(a => a.Attempt_Id).HasColumnName("ATTEMPT_ID");
+                entity.Property(a => a.User_Id).HasColumnName("USER_ID").IsRequired();
+                entity.Property(a => a.Quiz_Id).HasColumnName("QUIZ_ID").IsRequired();
+                entity.Property(a => a.Attempt_Number).HasColumnName("ATTEMPT_NUMBER");
+                entity.Property(a => a.Attempt_Date).HasColumnName("ATTEMPT_DATE");
 
-                entity.Property(e => e.Correct_Answer)
-                    .HasColumnName("CORRECT_ANSWER");
+                entity.HasOne(a => a.User)
+                      .WithMany(u => u.QuizAttempts)
+                      .HasForeignKey(a => a.User_Id)
+                      .OnDelete(DeleteBehavior.Restrict);
 
-                entity.Property(e => e.Difficulty_Level)
-                    .HasColumnName("DIFFICULTY_LEVEL");
+                entity.HasOne(a => a.Quiz)
+                      .WithMany(q => q.QuizAttempts)
+                      .HasForeignKey(a => a.Quiz_Id)
+                      .OnDelete(DeleteBehavior.Restrict);
+            });
 
-                // Foreign key relationship
-                entity.HasOne(d => d.Quiz)
-                    .WithMany(p => p.Questions)
-                    .HasForeignKey(d => d.Quiz_Id)
-                    .OnDelete(DeleteBehavior.Cascade);
+            // ===== Answer tabela =====
+            modelBuilder.Entity<Answer>(entity =>
+            {
+                entity.ToTable("ANSWERS");
+                entity.HasKey(a => a.Answer_Id);
+
+                // Eksplicitno mapiranje svake kolone
+                entity.Property(a => a.Answer_Id)
+                      .HasColumnName("ANSWER_ID")
+                      .ValueGeneratedOnAdd();
+
+                entity.Property(a => a.User_Id)
+                      .HasColumnName("USER_ID")
+                      .IsRequired();
+
+                entity.Property(a => a.Question_Id)
+                      .HasColumnName("QUESTION_ID")
+                      .IsRequired();
+
+                entity.Property(a => a.Quiz_Id) 
+                      .HasColumnName("QUIZ_ID")
+                      .IsRequired();
+
+                entity.Property(a => a.Attempt_Id)
+                       .HasColumnName("ATTEMPT_ID")
+                       .IsRequired();
+
+                entity.Property(a => a.User_Answer)
+                      .HasColumnName("USER_ANSWER");
+
+                entity.Property(a => a.Is_Correct)
+                      .HasColumnName("IS_CORRECT");
+
+                entity.HasOne(a => a.User)
+                      .WithMany(u => u.Answers)
+                      .HasForeignKey(a => a.User_Id)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(a => a.Question)
+                      .WithMany(q => q.Answers)
+                      .HasForeignKey(a => a.Question_Id)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(a => a.Quiz)
+                      .WithMany(q => q.Answers)
+                      .HasForeignKey(a => a.Quiz_Id)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(a => a.Attempt) // veza na attempt
+                      .WithMany(at => at.Answers)   // ili `Answers`, ako hoćeš da preimenuješ kolekciju u modelu
+                      .HasForeignKey(a => a.Attempt_Id)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                // UKLANJAMO sve HasOne/WithMany relationship-e za Answer tabelu
+                // Ovo sprečava EF da pravi automatske joinove koji prave probleme sa Oracle
+            });
+
+            // ===== QuizResult tabela =====
+            modelBuilder.Entity<QuizResult>(entity =>
+            {
+                entity.ToTable("QUIZ_RESULTS");
+                entity.HasKey(r => r.Result_Id);
+
+                entity.Property(r => r.Result_Id).HasColumnName("RESULT_ID");
+                entity.Property(r => r.User_Id).HasColumnName("USER_ID").IsRequired();
+                entity.Property(r => r.Quiz_Id).HasColumnName("QUIZ_ID").IsRequired();
+                entity.Property(r => r.Attempt_Id).HasColumnName("ATTEMPT_ID").IsRequired();
+                entity.Property(r => r.Score_Percentage).HasColumnName("SCORE");
+
+                entity.HasOne(r => r.User)
+                      .WithMany()
+                      .HasForeignKey(r => r.User_Id)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(r => r.Quiz)
+                      .WithMany()
+                      .HasForeignKey(r => r.Quiz_Id)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(r => r.UserQuizAttempt)
+                      .WithMany()
+                      .HasForeignKey(r => r.Attempt_Id)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // ===== Ranking tabela =====
+            modelBuilder.Entity<Ranking>(entity =>
+            {
+                entity.ToTable("RANKINGS");
+                entity.HasKey(r => r.Ranking_Id);
+
+                entity.Property(r => r.Ranking_Id).HasColumnName("RANKING_ID");
+                entity.Property(r => r.User_Id).HasColumnName("USER_ID").IsRequired();
+                entity.Property(r => r.Quiz_Id).HasColumnName("QUIZ_ID").IsRequired();
+                entity.Property(r => r.Rank_Position).HasColumnName("POSITION");
+
+                entity.HasOne(r => r.User)
+                      .WithMany()
+                      .HasForeignKey(r => r.User_Id)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(r => r.Quiz)
+                      .WithMany()
+                      .HasForeignKey(r => r.Quiz_Id)
+                      .OnDelete(DeleteBehavior.Cascade);
             });
         }
     }

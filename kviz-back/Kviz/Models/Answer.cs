@@ -16,17 +16,31 @@ namespace Kviz.Models
         [Column("QUESTION_ID")]
         public int Question_Id { get; set; }
 
+        [Column("QUIZ_ID")]
+        public int Quiz_Id { get; set; }
+
+        [Column("ATTEMPT_ID")]
+        public int Attempt_Id { get; set; }
+
         [Column("USER_ANSWER")]
         public string? User_Answer { get; set; }
 
         [Column("IS_CORRECT")]
         public int Is_Correct { get; set; }
 
-        // Navigation properties
+
+        // Navigaciona polja sa explicitnim FK, ORACLE-friendly
         [ForeignKey("User_Id")]
-        public virtual User User { get; set; } = null!;
+        public virtual User? User { get; set; }
 
         [ForeignKey("Question_Id")]
-        public virtual Question Question { get; set; } = null!;
+        public virtual Question? Question { get; set; }
+
+        [ForeignKey(nameof(Quiz_Id))]
+        public virtual Quiz Quiz { get; set; }
+
+        [ForeignKey(nameof(Attempt_Id))]
+        public virtual UserQuizAttempt Attempt { get; set; }
+
     }
 }

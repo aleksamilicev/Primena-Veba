@@ -34,14 +34,21 @@ namespace Kviz.Models
         [Column("COMPLETED_AT")]
         public DateTime? Completed_At { get; set; }
 
+
         // Navigation properties
-        [ForeignKey("User_Id")]
+        //public User User { get; set; }
+        //public Quiz Quiz { get; set; }
+        //public UserQuizAttempt UserQuizAttempt { get; set; }
+
+        // Navigation properties
+        [ForeignKey(nameof(User_Id))]
         public virtual User User { get; set; } = null!;
 
-        [ForeignKey("Quiz_Id")]
+        [ForeignKey(nameof(Quiz_Id))]
         public virtual Quiz Quiz { get; set; } = null!;
 
-        [ForeignKey("Attempt_Id")]
+        [ForeignKey(nameof(Attempt_Id))]
         public virtual UserQuizAttempt UserQuizAttempt { get; set; } = null!;
+
     }
 }

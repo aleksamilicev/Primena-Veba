@@ -5,6 +5,64 @@
     "version": "v1"
   },
   "paths": {
+    "/api/active-attempts": {
+      "get": {
+        "tags": [
+          "ActiveAttempts"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/active-attempts/{attemptId}/resume": {
+      "get": {
+        "tags": [
+          "ActiveAttempts"
+        ],
+        "parameters": [
+          {
+            "name": "attemptId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/active-attempts/{attemptId}/abandon": {
+      "delete": {
+        "tags": [
+          "ActiveAttempts"
+        ],
+        "parameters": [
+          {
+            "name": "attemptId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/": {
       "get": {
         "tags": [
@@ -481,6 +539,145 @@
         }
       }
     },
+    "/api/quiz-taking/{quizId}/start": {
+      "post": {
+        "tags": [
+          "QuizTaking"
+        ],
+        "parameters": [
+          {
+            "name": "quizId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/quiz-taking/{quizId}/{questionId}/answer": {
+      "post": {
+        "tags": [
+          "QuizTaking"
+        ],
+        "parameters": [
+          {
+            "name": "quizId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "questionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitAnswerDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitAnswerDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitAnswerDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/quiz-taking/{attemptId}/finish": {
+      "post": {
+        "tags": [
+          "QuizTaking"
+        ],
+        "parameters": [
+          {
+            "name": "attemptId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FinishQuizDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FinishQuizDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/FinishQuizDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/quiz-taking/{attemptId}/status": {
+      "get": {
+        "tags": [
+          "QuizTaking"
+        ],
+        "parameters": [
+          {
+            "name": "attemptId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/Quizzes": {
       "get": {
         "tags": [
@@ -607,6 +804,57 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/Quizzes/{quizId}/questions/{questionId}/answer": {
+      "post": {
+        "tags": [
+          "Quizzes"
+        ],
+        "parameters": [
+          {
+            "name": "quizId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "questionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitAnswerDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitAnswerDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitAnswerDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
           }
         }
       }
@@ -924,6 +1172,52 @@
   },
   "components": {
     "schemas": {
+      "Answer": {
+        "type": "object",
+        "properties": {
+          "Answer_Id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "User_Id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "Question_Id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "Quiz_Id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "Attempt_Id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "User_Answer": {
+            "type": "string",
+            "nullable": true
+          },
+          "Is_Correct": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "User": {
+            "$ref": "#/components/schemas/User"
+          },
+          "Question": {
+            "$ref": "#/components/schemas/Question"
+          },
+          "Quiz": {
+            "$ref": "#/components/schemas/Quiz"
+          },
+          "Attempt": {
+            "$ref": "#/components/schemas/UserQuizAttempt"
+          }
+        },
+        "additionalProperties": false
+      },
       "CreateQuestionDto": {
         "required": [
           "CorrectAnswer",
@@ -1018,6 +1312,21 @@
         },
         "additionalProperties": false
       },
+      "FinishQuizDto": {
+        "required": [
+          "TimeTakenSeconds"
+        ],
+        "type": "object",
+        "properties": {
+          "TimeTakenSeconds": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
       "LoginUserDto": {
         "required": [
           "Password"
@@ -1074,6 +1383,13 @@
           },
           "Quiz": {
             "$ref": "#/components/schemas/Quiz"
+          },
+          "Answers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Answer"
+            },
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -1149,6 +1465,79 @@
               "$ref": "#/components/schemas/Question"
             },
             "nullable": true
+          },
+          "Answers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Answer"
+            },
+            "nullable": true
+          },
+          "QuizAttempts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserQuizAttempt"
+            },
+            "nullable": true
+          },
+          "QuizResults": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/QuizResult"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "QuizResult": {
+        "type": "object",
+        "properties": {
+          "Result_Id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "User_Id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "Quiz_Id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "Attempt_Id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "Total_Questions": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "Correct_Answers": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "Score_Percentage": {
+            "type": "number",
+            "format": "float"
+          },
+          "Time_Taken": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "Completed_At": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "User": {
+            "$ref": "#/components/schemas/User"
+          },
+          "Quiz": {
+            "$ref": "#/components/schemas/Quiz"
+          },
+          "UserQuizAttempt": {
+            "$ref": "#/components/schemas/UserQuizAttempt"
           }
         },
         "additionalProperties": false
@@ -1171,6 +1560,19 @@
             "format": "email"
           },
           "Password": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SubmitAnswerDto": {
+        "required": [
+          "UserAnswer"
+        ],
+        "type": "object",
+        "properties": {
+          "UserAnswer": {
             "minLength": 1,
             "type": "string"
           }
@@ -1257,6 +1659,114 @@
             "minimum": 1,
             "type": "integer",
             "format": "int32",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "User": {
+        "required": [
+          "Email",
+          "Is_Admin",
+          "Password_Hash",
+          "Username"
+        ],
+        "type": "object",
+        "properties": {
+          "User_Id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "Username": {
+            "maxLength": 255,
+            "minLength": 1,
+            "type": "string"
+          },
+          "Is_Admin": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "Email": {
+            "maxLength": 255,
+            "minLength": 1,
+            "type": "string"
+          },
+          "Password_Hash": {
+            "maxLength": 255,
+            "minLength": 1,
+            "type": "string"
+          },
+          "Profile_Image_Url": {
+            "maxLength": 255,
+            "type": "string",
+            "nullable": true
+          },
+          "Answers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Answer"
+            },
+            "nullable": true
+          },
+          "QuizAttempts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserQuizAttempt"
+            },
+            "nullable": true
+          },
+          "QuizResults": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/QuizResult"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "UserQuizAttempt": {
+        "type": "object",
+        "properties": {
+          "Attempt_Id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "User_Id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "Quiz_Id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "Attempt_Number": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "Attempt_Date": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "QuizResults": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/QuizResult"
+            },
+            "nullable": true
+          },
+          "User": {
+            "$ref": "#/components/schemas/User"
+          },
+          "Quiz": {
+            "$ref": "#/components/schemas/Quiz"
+          },
+          "Answers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Answer"
+            },
             "nullable": true
           }
         },
