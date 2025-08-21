@@ -176,7 +176,7 @@ namespace Kviz.Controllers
 
         // POST: api/quiz-taking/{attemptId}/finish - Završetak kviza
         [HttpPost("{attemptId}/finish")]
-        public async Task<IActionResult> FinishQuiz(int attemptId, [FromBody] FinishQuizDto finishQuizDto)
+        public async Task<IActionResult> FinishQuiz(int attemptId)
         {
             var userId = GetCurrentUserId();
             if (userId == null)
@@ -207,8 +207,9 @@ namespace Kviz.Controllers
                 // 4. Dobij odgovore korisnika za ovaj attempt
                 var userAnswers = await _context.Answers
                     .Where(a => a.User_Id == userId &&
-                                a.Quiz_Id == attempt.Quiz_Id &&
-                                allQuestions.Select(q => q.Question_Id).Contains(a.Question_Id))
+                    a.Quiz_Id == attempt.Quiz_Id &&
+                    a.Attempt_Id == attemptId &&    // <-- ovo je ključno
+                    allQuestions.Select(q => q.Question_Id).Contains(a.Question_Id))
                     .ToListAsync();
 
                 int totalQuestions = allQuestions.Count;
@@ -218,6 +219,14 @@ namespace Kviz.Controllers
                     : 0;
 
                 // 5. Kreiraj rezultat
+                int timeTakenSeconds = 0;
+
+                if (attempt.Attempt_Date.HasValue)
+                {
+                    timeTakenSeconds = (int)(DateTime.UtcNow - attempt.Attempt_Date.Value).TotalSeconds;
+                }
+
+
                 var result = new QuizResult
                 {
                     User_Id = userId.Value,
@@ -226,7 +235,7 @@ namespace Kviz.Controllers
                     Total_Questions = totalQuestions,
                     Correct_Answers = correctAnswers,
                     Score_Percentage = scorePercentage,
-                    Time_Taken = finishQuizDto.TimeTakenSeconds,
+                    Time_Taken = timeTakenSeconds,
                     Completed_At = DateTime.UtcNow
                 };
 
@@ -257,7 +266,7 @@ namespace Kviz.Controllers
                     TotalQuestions = totalQuestions,
                     CorrectAnswers = correctAnswers,
                     ScorePercentage = Math.Round(scorePercentage, 2),
-                    TimeTaken = finishQuizDto.TimeTakenSeconds,
+                    TimeTaken = timeTakenSeconds,
                     CompletedAt = result.Completed_At ?? DateTime.UtcNow,
                     QuestionResults = questionResults
                 };

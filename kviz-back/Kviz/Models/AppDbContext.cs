@@ -150,7 +150,7 @@ namespace Kviz.Models
                 entity.Property(r => r.User_Id).HasColumnName("USER_ID").IsRequired();
                 entity.Property(r => r.Quiz_Id).HasColumnName("QUIZ_ID").IsRequired();
                 entity.Property(r => r.Attempt_Id).HasColumnName("ATTEMPT_ID").IsRequired();
-                entity.Property(r => r.Score_Percentage).HasColumnName("SCORE");
+                entity.Property(r => r.Score_Percentage).HasColumnName("SCORE_PERCENTAGE");
 
                 entity.HasOne(r => r.User)
                       .WithMany()

@@ -222,11 +222,6 @@
         "Name": "attemptId",
         "Type": "System.Int32",
         "IsRequired": true
-      },
-      {
-        "Name": "finishQuizDto",
-        "Type": "Kviz.DTOs.FinishQuizDto",
-        "IsRequired": true
       }
     ],
     "ReturnTypes": []

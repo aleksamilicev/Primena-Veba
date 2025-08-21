@@ -25,7 +25,6 @@ namespace Kviz.Models
         // Navigation properties
         //public User User { get; set; }
         //public Quiz Quiz { get; set; }
-        public ICollection<QuizResult> QuizResults { get; set; }
 
         // Navigation properties
         [ForeignKey(nameof(User_Id))]

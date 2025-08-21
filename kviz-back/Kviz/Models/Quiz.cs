@@ -37,6 +37,5 @@ namespace Kviz.Models
 
         public ICollection<Answer> Answers { get; set; }
         public ICollection<UserQuizAttempt> QuizAttempts { get; set; }
-        public ICollection<QuizResult> QuizResults { get; set; }
     }
 }
