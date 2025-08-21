@@ -107,7 +107,7 @@ namespace Kviz.Controllers
 
 
 
-        // READ
+        // READ jedan po jedan
         // Dobijanje pojedinačnog pitanja po ID
         [HttpGet("question/{questionId}")]
         [Authorize]
@@ -137,6 +137,37 @@ namespace Kviz.Controllers
 
 
         // ==================== ADMIN CRUD OPERACIJE ====================
+
+        // READ
+        // Dobijanje svih pitanja
+        [HttpGet]
+        [Authorize]
+        public async Task<ActionResult<IEnumerable<Question>>> GetAllQuestions()
+        {
+            try
+            {
+                if (!IsCurrentUserAdmin())
+                {
+                    return Forbid("Samo administratori mogu videti detaljan opis pitanja");
+                }
+
+                var questions = await _context.Questions.ToListAsync();
+
+                if (questions == null || !questions.Any())
+                {
+                    return NotFound("Trenutno ne postoji nijedno pitanje");
+                }
+
+                return Ok(questions);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Greška pri dohvatanju svih pitanja");
+                return StatusCode(500, new { message = "Greška pri dohvatanju pitanja", error = ex.Message });
+            }
+        }
+
+
 
         // CREATE - Kreiranje novog pitanja (samo admin)
         [HttpPost]
