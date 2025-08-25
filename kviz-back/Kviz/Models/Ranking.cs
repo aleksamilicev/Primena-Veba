@@ -25,6 +25,9 @@ namespace Kviz.Models
         [Column("RANK_POSITION")]
         public int Rank_Position { get; set; }
 
+        [Column("COMPLETED_AT")]
+        public DateTime? Completed_At { get; set; }
+
         // Navigation properties
         [ForeignKey("User_Id")]
         public virtual User User { get; set; } = null!;

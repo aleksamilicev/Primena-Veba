@@ -120,8 +120,8 @@ namespace Kviz.Controllers
             }
         }
 
-        // GET: api/quizresults/quiz/{quizId}/my-results
-        [HttpGet("quiz/{quizId}/my-results")]
+        // GET: api/quizresults/{quizId}/my-results
+        [HttpGet("{quizId}/my-results")]
         public async Task<IActionResult> GetMyQuizResults(int quizId)
         {
             var userId = GetCurrentUserId();
@@ -130,28 +130,31 @@ namespace Kviz.Controllers
 
             try
             {
-                var results = await _context.QuizResults
+                // 1. Dohvati sve rezultate iz baze i materializuj u listu
+                var quizResults = await _context.QuizResults
                     .Include(qr => qr.Quiz)
                     .Where(qr => qr.User_Id == userId && qr.Quiz_Id == quizId)
                     .OrderByDescending(qr => qr.Completed_At)
-                    .Select((qr, index) => new
-                    {
-                        resultId = qr.Result_Id,
-                        attemptId = qr.Attempt_Id,
-                        attemptNumber = index + 1,
-                        totalQuestions = qr.Total_Questions,
-                        correctAnswers = qr.Correct_Answers,
-                        scorePercentage = qr.Score_Percentage,
-                        timeTaken = qr.Time_Taken,
-                        completedAt = qr.Completed_At,
-                        quizTitle = qr.Quiz.Title
-                    })
-                    .ToListAsync();
+                    .ToListAsync();  // <--- materializacija u memoriji
 
-                if (!results.Any())
+                if (!quizResults.Any())
                     return NotFound("Nema rezultata za ovaj kviz");
 
-                // Računanje statistika
+                // 2. Projekcija sa indeksom u memoriji
+                var results = quizResults.Select((qr, index) => new
+                {
+                    resultId = qr.Result_Id,
+                    attemptId = qr.Attempt_Id,
+                    attemptNumber = index + 1, // redni broj pokušaja
+                    totalQuestions = qr.Total_Questions,
+                    correctAnswers = qr.Correct_Answers,
+                    scorePercentage = qr.Score_Percentage,
+                    timeTaken = qr.Time_Taken,
+                    completedAt = qr.Completed_At,
+                    quizTitle = qr.Quiz.Title
+                }).ToList();
+
+                // 3. Računanje statistika
                 var scores = results.Select(r => r.scorePercentage).ToList();
                 var bestScore = scores.Max();
                 var averageScore = scores.Average();
@@ -176,6 +179,7 @@ namespace Kviz.Controllers
                 return StatusCode(500, $"Greška pri dohvatanju rezultata kviza: {ex.Message}");
             }
         }
+
 
         // GET: api/quizresults/my-stats
         [HttpGet("my-stats")]

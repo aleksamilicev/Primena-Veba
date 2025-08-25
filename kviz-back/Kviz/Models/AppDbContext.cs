@@ -171,13 +171,16 @@ namespace Kviz.Models
             // ===== Ranking tabela =====
             modelBuilder.Entity<Ranking>(entity =>
             {
-                entity.ToTable("RANKINGS");
+                entity.ToTable("RANKING");
                 entity.HasKey(r => r.Ranking_Id);
 
                 entity.Property(r => r.Ranking_Id).HasColumnName("RANKING_ID");
-                entity.Property(r => r.User_Id).HasColumnName("USER_ID").IsRequired();
-                entity.Property(r => r.Quiz_Id).HasColumnName("QUIZ_ID").IsRequired();
-                entity.Property(r => r.Rank_Position).HasColumnName("POSITION");
+                entity.Property(r => r.User_Id).HasColumnName("USER_ID");
+                entity.Property(r => r.Quiz_Id).HasColumnName("QUIZ_ID");
+                entity.Property(r => r.Rank_Position).HasColumnName("SCORE_PERCENTAGE");
+                entity.Property(r => r.Rank_Position).HasColumnName("TIME_TAKEN");
+                entity.Property(r => r.Rank_Position).HasColumnName("RANK_POSITION");
+                entity.Property(r => r.Completed_At).HasColumnName("COMPLETED_AT");
 
                 entity.HasOne(r => r.User)
                       .WithMany()

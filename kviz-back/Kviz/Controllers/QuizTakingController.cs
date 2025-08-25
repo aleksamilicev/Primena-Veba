@@ -174,6 +174,48 @@ namespace Kviz.Controllers
 
 
 
+
+
+        private async Task GenerateRankingForQuiz(int quizId)
+        {
+            var bestResults = await _context.QuizResults
+                .Where(r => r.Quiz_Id == quizId)
+                .GroupBy(r => r.User_Id)
+                .Select(g => g
+                    .OrderByDescending(r => r.Score_Percentage)
+                    .ThenBy(r => r.Time_Taken)
+                    .FirstOrDefault()
+                )
+                .ToListAsync();
+
+            if (!bestResults.Any()) return;
+
+            var ordered = bestResults
+                .OrderByDescending(r => r.Score_Percentage)
+                .ThenBy(r => r.Time_Taken)
+                .ToList();
+
+            var oldRanking = _context.Rankings.Where(r => r.Quiz_Id == quizId);
+            _context.Rankings.RemoveRange(oldRanking);
+
+            int position = 1;
+            foreach (var result in ordered)
+            {
+                _context.Rankings.Add(new Ranking
+                {
+                    Quiz_Id = quizId,
+                    User_Id = result.User_Id,
+                    Score_Percentage = result.Score_Percentage,
+                    Time_Taken = result.Time_Taken,
+                    Rank_Position = position++,
+                    Completed_At = result.Completed_At
+                });
+            }
+
+            await _context.SaveChangesAsync();
+        }
+
+
         // POST: api/quiz-taking/{attemptId}/finish - Završetak kviza
         [HttpPost("{attemptId}/finish")]
         public async Task<IActionResult> FinishQuiz(int attemptId)
@@ -241,6 +283,11 @@ namespace Kviz.Controllers
 
                 _context.QuizResults.Add(result);
                 await _context.SaveChangesAsync();
+
+                _context.ChangeTracker.Clear(); // reset EF tracking
+
+                // automatski generisi ranking
+                await GenerateRankingForQuiz(attempt.Quiz_Id);
 
                 // 6. Pripremi detaljan odgovor po pitanjima
                 var questionResults = allQuestions.Select(q =>

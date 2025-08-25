@@ -286,6 +286,22 @@
   },
   {
     "ContainingType": "Kviz.Controllers.QuizResultsController",
+    "Method": "GetMyQuizResults",
+    "RelativePath": "api/QuizResults/{quizId}/my-results",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "quizId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Kviz.Controllers.QuizResultsController",
     "Method": "GetResultDetails",
     "RelativePath": "api/QuizResults/{resultId}",
     "HttpMethod": "GET",
@@ -386,22 +402,6 @@
     "IsController": true,
     "Order": 0,
     "Parameters": [],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "Kviz.Controllers.QuizResultsController",
-    "Method": "GetMyQuizResults",
-    "RelativePath": "api/QuizResults/quiz/{quizId}/my-results",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "quizId",
-        "Type": "System.Int32",
-        "IsRequired": true
-      }
-    ],
     "ReturnTypes": []
   },
   {
@@ -599,6 +599,43 @@
         "Name": "deleteQuizzesDto",
         "Type": "Kviz.DTOs.DeleteQuizzesDto",
         "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Kviz.Controllers.RankingController",
+    "Method": "GetAllRankings",
+    "RelativePath": "api/Ranking",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "period",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Kviz.Controllers.RankingController",
+    "Method": "GetRanking",
+    "RelativePath": "api/Ranking/{quizId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "quizId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "period",
+        "Type": "System.String",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": []
