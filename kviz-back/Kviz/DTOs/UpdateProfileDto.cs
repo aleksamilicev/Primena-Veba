@@ -4,6 +4,8 @@ namespace Kviz.DTOs
 {
     public class UpdateProfileDto
     {
+        public string? Username { get; set; }
+
         [EmailAddress(ErrorMessage = "Neispravna email adresa")]
         [StringLength(30, ErrorMessage = "Email ne sme biti duži od 30 karaktera")]
         public string? Email { get; set; }

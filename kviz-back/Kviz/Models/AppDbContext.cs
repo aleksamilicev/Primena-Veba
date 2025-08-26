@@ -34,6 +34,7 @@ namespace Kviz.Models
                 entity.HasKey(u => u.User_Id);
             });
 
+
             // ===== Quiz tabela =====
             modelBuilder.Entity<Quiz>(entity =>
             {

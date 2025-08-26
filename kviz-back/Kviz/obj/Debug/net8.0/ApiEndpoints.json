@@ -689,7 +689,7 @@
   {
     "ContainingType": "Kviz.Controllers.UsersController",
     "Method": "UpdateProfile",
-    "RelativePath": "api/Users/profile",
+    "RelativePath": "api/Users/profile/edit",
     "HttpMethod": "PUT",
     "IsController": true,
     "Order": 0,

@@ -303,7 +303,7 @@ namespace Kviz.Controllers
 
 
         // 7. Endpoint za ažuriranje profila
-        [HttpPut("profile")]
+        [HttpPut("profile/edit")]
         [Authorize]
         public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileDto dto)
         {
@@ -317,27 +317,44 @@ namespace Kviz.Controllers
                 if (user == null)
                     return NotFound(new { message = "Korisnik nije pronađen" });
 
-                // Ažuriraj samo prosleđene vrednosti
+                // Provera email-a
                 if (!string.IsNullOrWhiteSpace(dto.Email) && dto.Email != user.Email)
                 {
                     if (!IsValidEmail(dto.Email))
                         return BadRequest(new { message = "Neispravna email adresa" });
 
-                    // Proveri da li email već postoji
-                    var emailExists = await _context.Users
-                        .AnyAsync(u => u.Email.ToLower() == dto.Email.ToLower() && u.User_Id != userId);
+                    // Proveri da li email već postoji - Oracle-kompatibilno
+                    var emailCheck = await _context.Users
+                        .Where(u => u.Email.ToLower() == dto.Email.ToLower())
+                        .Where(u => u.User_Id != userId)
+                        .FirstOrDefaultAsync();
 
-                    if (emailExists)
+                    if (emailCheck != null)
                         return BadRequest(new { message = "Email je već u upotrebi" });
 
                     user.Email = dto.Email.Trim().ToLower();
                 }
 
+                // Provera korisničkog imena
+                if (!string.IsNullOrWhiteSpace(dto.Username) && dto.Username != user.Username)
+                {
+                    // Proveri da li username već postoji - Oracle-kompatibilno
+                    var usernameCheck = await _context.Users
+                        .Where(u => u.Username.ToLower() == dto.Username.ToLower())
+                        .Where(u => u.User_Id != userId)
+                        .FirstOrDefaultAsync();
+
+                    if (usernameCheck != null)
+                        return BadRequest(new { message = "Username je već u upotrebi" });
+
+                    user.Username = dto.Username.Trim();
+                }
+
+                // Ažuriranje URL-a slike
                 if (!string.IsNullOrWhiteSpace(dto.ProfileImageUrl))
                     user.Profile_Image_Url = dto.ProfileImageUrl.Trim();
 
                 await _context.SaveChangesAsync();
-
                 return Ok(new { message = "Profil je uspešno ažuriran" });
             }
             catch (Exception ex)

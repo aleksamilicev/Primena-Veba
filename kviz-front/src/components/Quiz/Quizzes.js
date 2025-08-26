@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import { getQuizzes } from "../../api/services/quizService";
 import QuizCard from "./QuizCard";
 import QuizFilter from "./QuizFilter";
+import ProfileDropdown from "../Layout/ProfileDropdown";
+
 
 const Quizzes = () => {
   const [quizzes, setQuizzes] = useState([]);
@@ -38,17 +40,20 @@ const Quizzes = () => {
     setFilteredQuizzes(filtered);
   };
 
-  return (
-    <div>
+return (
+  <div>
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
       <h1>Available Quizzes</h1>
-      <QuizFilter quizzes={quizzes} onFilter={handleFilter} />
-      <div className="quiz-list">
-        {filteredQuizzes.map((quiz) => (
-          <QuizCard key={quiz.Quiz_Id} quiz={quiz} />
-        ))}
-      </div>
+      <ProfileDropdown />
     </div>
-  );
+    <QuizFilter quizzes={quizzes} onFilter={handleFilter} />
+    <div className="quiz-list">
+      {filteredQuizzes.map((quiz) => (
+        <QuizCard key={quiz.Quiz_Id} quiz={quiz} />
+      ))}
+    </div>
+  </div>
+);
 };
 
 export default Quizzes;

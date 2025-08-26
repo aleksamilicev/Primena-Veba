@@ -1107,7 +1107,21 @@
             "description": "OK"
           }
         }
-      },
+      }
+    },
+    "/api/Users": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Users/profile/edit": {
       "put": {
         "tags": [
           "Users"
@@ -1131,18 +1145,6 @@
             }
           }
         },
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
-      }
-    },
-    "/api/Users": {
-      "get": {
-        "tags": [
-          "Users"
-        ],
         "responses": {
           "200": {
             "description": "OK"
@@ -1543,6 +1545,10 @@
       "UpdateProfileDto": {
         "type": "object",
         "properties": {
+          "Username": {
+            "type": "string",
+            "nullable": true
+          },
           "Email": {
             "maxLength": 30,
             "minLength": 0,

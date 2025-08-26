@@ -20,3 +20,19 @@ export const registerUser = async (username, password, email, profileImageUrl) =
   });
   return response.data; // očekuješ token
 };
+
+export const getProfile = async () => {
+  const token = localStorage.getItem("token");
+  const response = await axios.get(`${API_BASE_URL}/users/profile`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return response.data;
+};
+
+export const updateProfile = async (updateData) => {
+  const token = localStorage.getItem("token");
+  const response = await axios.put(`${API_BASE_URL}/users/profile/edit`, updateData, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return response.data;
+};
