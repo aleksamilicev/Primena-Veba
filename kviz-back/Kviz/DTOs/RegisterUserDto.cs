@@ -16,6 +16,8 @@ namespace Kviz.DTOs
         [Required(ErrorMessage = "Lozinka je obavezna")]
         //[StringLength(12, MinimumLength = 6, ErrorMessage = "Lozinka mora biti između 6 i 12 karaktera")]
         public string Password { get; set; } = string.Empty;
+
+        public string ProfileImageUrl { get; set; } = string.Empty;
     }
 
 }

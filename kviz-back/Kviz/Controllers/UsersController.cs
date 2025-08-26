@@ -107,6 +107,20 @@ namespace Kviz.Controllers
                 if(dto.Email.Length > 30)
                     return BadRequest(new { message = "Email ne sme biti duži od 30 karaktera" });
 
+
+                // 5. Validacija URL-a slike (ako je unet)
+                if (!string.IsNullOrWhiteSpace(dto.ProfileImageUrl))
+                {
+                    // Provera da li URL počinje sa "https://"
+                    var isValidUrl = Uri.TryCreate(dto.ProfileImageUrl, UriKind.Absolute, out var uriResult)
+                                     && uriResult.Scheme == Uri.UriSchemeHttps;  // Samo https je dozvoljeno
+
+                    if (!isValidUrl)
+                        return BadRequest(new { message = "Neispravan URL slike. URL mora početi sa 'https://'" });
+                }
+
+
+
                 // 5. Provera jedinstvenosti username/email
                 var existingUser = await _context.Users
                     .FirstOrDefaultAsync(u => u.Username.ToLower() == dto.Username.ToLower() ||
@@ -132,7 +146,8 @@ namespace Kviz.Controllers
                     Username = dto.Username.Trim(),
                     Email = dto.Email.Trim().ToLower(),
                     Password_Hash = hashedPassword,
-                    Is_Admin = 0 // Podrazumevano nije admin, 0 = korisnik, 1 = admin
+                    Is_Admin = 0, // Podrazumevano nije admin, 0 = korisnik, 1 = admin
+                    Profile_Image_Url = dto.ProfileImageUrl // Dodajemo URL slike u profil
                 };
 
                 _context.Users.Add(user);
@@ -148,6 +163,7 @@ namespace Kviz.Controllers
                     message = "Registracija je uspešna",
                     userId = user.User_Id,
                     username = user.Username,
+                    profileImageUrl = user.Profile_Image_Url,
                     token = token,
                     tokenType = "Bearer"
                 });

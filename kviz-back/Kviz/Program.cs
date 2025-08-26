@@ -100,14 +100,15 @@ builder.Services.AddAuthorization();
 // CORS (opciono, potrebno za frontend aplikacije)
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowSpecificOrigin", policy =>
+    options.AddPolicy("AllowReactApp", policy =>
     {
-        policy.WithOrigins("http://localhost:3000", "http://localhost:4200") // Dodaj frontend URL-ove
+        policy.WithOrigins("https://localhost:3000") // dodaj taèan origin za React
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
     });
 });
+
 
 // Swagger/OpenAPI
 builder.Services.AddEndpointsApiExplorer();
@@ -171,7 +172,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 // CORS mora biti pre Authentication i Authorization
-app.UseCors("AllowSpecificOrigin");
+app.UseCors("AllowReactApp");
 
 // Authentication middleware
 app.UseAuthentication();

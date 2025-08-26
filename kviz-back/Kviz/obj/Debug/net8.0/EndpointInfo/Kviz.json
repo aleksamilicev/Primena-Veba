@@ -1356,7 +1356,6 @@
           },
           "Email": {
             "type": "string",
-            "format": "email",
             "nullable": true
           },
           "Password": {
@@ -1520,6 +1519,10 @@
           "Password": {
             "minLength": 1,
             "type": "string"
+          },
+          "ProfileImageUrl": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false

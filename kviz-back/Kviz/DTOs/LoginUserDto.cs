@@ -6,7 +6,7 @@ namespace Kviz.DTOs
     {
         public string? Username { get; set; }
 
-        [EmailAddress(ErrorMessage = "Neispravna email adresa")]
+        //[EmailAddress(ErrorMessage = "Neispravna email adresa")]
         public string? Email { get; set; }
 
 

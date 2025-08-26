@@ -24,13 +24,23 @@ namespace Kviz.Controllers
         // Standardni endpoint za dobijanje svih kvizova + filtriranje
         [HttpGet]
         public async Task<IActionResult> GetQuizzes(
-    [FromQuery] string? category,
-    [FromQuery] string? difficulty,
-    [FromQuery] string? search
-)
+            [FromQuery] string? category,
+            [FromQuery] string? difficulty,
+            [FromQuery] string? search
+            )
         {
             try
             {
+                // Provera da li postoji Authorization header
+                var token = Request.Headers["Authorization"].FirstOrDefault();
+
+                if (string.IsNullOrEmpty(token) || !token.StartsWith("Bearer "))
+                {
+                    _logger.LogWarning("Pokušaj pristupa bez validnog tokena");
+                    return Unauthorized(new { message = "Niste autorizovani. Token nije prosleđen ili je neispravan." });
+                }
+
+
                 // Debug log za praćenje parametara
                 _logger.LogInformation($"GetQuizzes pozvan sa parametrima - Category: '{category}', Difficulty: '{difficulty}', Search: '{search}'");
 
@@ -471,186 +481,6 @@ namespace Kviz.Controllers
                 return StatusCode(500, new { message = "Greška pri brisanju kvizova", error = ex.Message });
             }
         }
-
-
-
-
-
-
-
-
-
-
-        // ==================== Resavanje kviza ====================
-        // GET: api/quizzes/available - Kvizovi dostupni za rešavanje sa statistikama korisnika
-        /*
-        [HttpGet("available")]
-        [Authorize]
-        public async Task<ActionResult<List<QuizForTakingDto>>> GetAvailableQuizzes()
-        {
-            var userId = GetCurrentUserId();
-            if (userId == null)
-                return Unauthorized("Korisnik nije autentifikovan");
-
-            try
-            {
-                var quizzes = await _context.Quizzes
-                    .Select(q => new QuizForTakingDto
-                    {
-                        QuizId = q.Quiz_Id,
-                        Title = q.Title,
-                        Description = q.Description,
-                        Category = q.Category,
-                        DifficultyLevel = q.Difficulty_Level,
-                        TotalQuestions = _context.Questions.Count(quest => quest.Quiz_Id == q.Quiz_Id),
-                        UserAttempts = _context.UserQuizAttempts.Count(attempt => attempt.Quiz_Id == q.Quiz_Id && attempt.User_Id == userId),
-                        BestScore = _context.QuizResults
-                            .Where(r => r.Quiz_Id == q.Quiz_Id && r.User_Id == userId)
-                            .Max(r => (double?)r.Score_Percentage),
-                        LastAttempt = _context.UserQuizAttempts
-                            .Where(a => a.Quiz_Id == q.Quiz_Id && a.User_Id == userId)
-                            .OrderByDescending(a => a.Attempt_Date)
-                            .Select(a => (DateTime?)a.Attempt_Date)
-                            .FirstOrDefault(),
-                        CanTakeQuiz = true // Možete dodati logiku za ograničavanje pristupa
-                    })
-                    .Where(q => q.TotalQuestions > 0) // Samo kvizovi koji imaju pitanja
-                    .OrderBy(q => q.Category)
-                    .ThenBy(q => q.Title)
-                    .ToListAsync();
-
-                return Ok(quizzes);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Greška pri dohvatanju dostupnih kvizova za korisnika {UserId}", userId);
-                return StatusCode(500, $"Greška pri dohvatanju kvizova: {ex.Message}");
-            }
-        }
-
-
-
-        // GET: api/quizzes/{quizId}/preview - Pregled kviza pre početka
-        [HttpGet("{quizId}/preview")]
-        [Authorize]
-        public async Task<ActionResult<QuizPreviewDto>> GetQuizPreview(int quizId)
-        {
-            var userId = GetCurrentUserId();
-            if (userId == null)
-                return Unauthorized("Korisnik nije autentifikovan");
-
-            try
-            {
-                var quiz = await _context.Quizzes.FindAsync(quizId);
-                if (quiz == null)
-                    return NotFound($"Kviz sa ID {quizId} ne postoji");
-
-                var totalQuestions = await _context.Questions.CountAsync(q => q.Quiz_Id == quizId);
-                if (totalQuestions == 0)
-                    return BadRequest("Kviz nema pitanja i ne može se pokrenuti");
-
-                var userAttempts = await _context.UserQuizAttempts
-                    .Where(a => a.Quiz_Id == quizId && a.User_Id == userId)
-                    .OrderByDescending(a => a.Attempt_Date)
-                    .ToListAsync();
-
-                var userResults = await _context.QuizResults
-                    .Where(r => r.Quiz_Id == quizId && r.User_Id == userId)
-                    .OrderByDescending(r => r.Score_Percentage)
-                    .ToListAsync();
-
-                var questionTypes = await _context.Questions
-                    .Where(q => q.Quiz_Id == quizId)
-                    .GroupBy(q => q.Question_Type)
-                    .Select(g => new { Type = g.Key, Count = g.Count() })
-                    .ToListAsync();
-
-                var difficultyLevels = await _context.Questions
-                    .Where(q => q.Quiz_Id == quizId)
-                    .GroupBy(q => q.Difficulty_Level)
-                    .Select(g => new { Level = g.Key, Count = g.Count() })
-                    .ToListAsync();
-
-                var preview = new QuizPreviewDto
-                {
-                    QuizId = quiz.Quiz_Id,
-                    Title = quiz.Title,
-                    Description = quiz.Description,
-                    Category = quiz.Category,
-                    DifficultyLevel = quiz.Difficulty_Level,
-                    TotalQuestions = totalQuestions,
-                    QuestionTypes = questionTypes.ToDictionary(qt => qt.Type ?? "Nedefinirano", qt => qt.Count),
-                    DifficultyBreakdown = difficultyLevels.ToDictionary(dl => dl.Level ?? "Nedefinirano", dl => dl.Count),
-                    UserStats = new QuizUserStatsDto
-                    {
-                        TotalAttempts = userAttempts.Count,
-                        BestScore = userResults.Any() ? userResults.Max(r => r.Score_Percentage) : null,
-                        AverageScore = userResults.Any() ? Math.Round(userResults.Average(r => r.Score_Percentage), 2) : null,
-                        LastAttemptDate = userAttempts.FirstOrDefault()?.Attempt_Date,
-                        LastScore = userResults.OrderByDescending(r => r.Completed_At).FirstOrDefault()?.Score_Percentage
-                    },
-                    CanStart = true,
-                    EstimatedTimeMinutes = totalQuestions * 1.5 // Procena 1.5 min po pitanju
-                };
-
-                return Ok(preview);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Greška pri dohvatanju pregleda kviza {QuizId} za korisnika {UserId}", quizId, userId);
-                return StatusCode(500, $"Greška pri dohvatanju pregleda kviza: {ex.Message}");
-            }
-        }
-
-        // GET: api/quizzes/{quizId}/my-history - Istorija pokušaja korisnika za kviz
-        [HttpGet("{quizId}/my-history")]
-        [Authorize]
-        public async Task<ActionResult<List<QuizAttemptHistoryDto>>> GetMyQuizHistory(int quizId)
-        {
-            var userId = GetCurrentUserId();
-            if (userId == null)
-                return Unauthorized("Korisnik nije autentifikovan");
-
-            try
-            {
-                var history = await _context.UserQuizAttempts
-                    .Where(a => a.Quiz_Id == quizId && a.User_Id == userId)
-                    .Join(_context.QuizResults,
-                          attempt => attempt.Attempt_Id,
-                          result => result.Attempt_Id,
-                          (attempt, result) => new QuizAttemptHistoryDto
-                          {
-                              AttemptId = attempt.Attempt_Id,
-                              AttemptNumber = attempt.Attempt_Number,
-                              AttemptDate = (DateTime)attempt.Attempt_Date,
-                              Score = result.Score_Percentage,
-                              CorrectAnswers = result.Correct_Answers,
-                              TotalQuestions = result.Total_Questions,
-                              TimeTaken = result.Time_Taken,
-                              CompletedAt = (DateTime)result.Completed_At
-                          })
-                    .OrderByDescending(h => h.AttemptDate)
-                    .ToListAsync();
-
-                return Ok(history);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Greška pri dohvatanju istorije kviza {QuizId} za korisnika {UserId}", quizId, userId);
-                return StatusCode(500, $"Greška pri dohvatanju istorije: {ex.Message}");
-            }
-        }
-
-
-
-
-
-
-
-
-
-
-        */
 
 
 
