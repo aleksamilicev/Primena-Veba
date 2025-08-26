@@ -8,22 +8,33 @@ const Quizzes = () => {
   const [filteredQuizzes, setFilteredQuizzes] = useState([]);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const data = await getQuizzes();
-        setQuizzes(data);
-        setFilteredQuizzes(data);
-      } catch (error) {
-        console.error("Failed to fetch quizzes:", error);
-      }
-    };
-    fetchData();
+    fetchQuizzes();
   }, []);
 
-  const handleFilter = (category, difficulty) => {
+  const fetchQuizzes = async (search = "") => {
+    try {
+      const data = await getQuizzes(search);
+      setQuizzes(data);
+      setFilteredQuizzes(data);
+    } catch (error) {
+      console.error("Failed to fetch quizzes:", error);
+    }
+  };
+
+  const handleFilter = (category, difficulty, search) => {
     let filtered = quizzes;
+
     if (category) filtered = filtered.filter((q) => q.Category === category);
     if (difficulty) filtered = filtered.filter((q) => q.Difficulty_Level === difficulty);
+    if (search) {
+      const term = search.toLowerCase();
+      filtered = filtered.filter(
+        (q) =>
+          (q.Title && q.Title.toLowerCase().includes(term)) ||
+          (q.Description && q.Description.toLowerCase().includes(term))
+      );
+    }
+
     setFilteredQuizzes(filtered);
   };
 

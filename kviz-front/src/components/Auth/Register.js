@@ -15,8 +15,8 @@ const Register = () => {
   const handleRegister = async (e) => {
     e.preventDefault();
     try {
-      const newUser = new User({ username, email, password, profile_image_url: profileImageUrl });
-      await registerUser(newUser.username, newUser.password, newUser.email, newUser.profile_image_url);
+      const newUser = new User({ username, email, password, profileImageUrl: profileImageUrl });
+      await registerUser(newUser.username, newUser.password, newUser.email, newUser.profileImageUrl);
 
       alert("Registration successful!");
       navigate("/login");

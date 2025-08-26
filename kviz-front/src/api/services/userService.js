@@ -11,12 +11,12 @@ export const loginUser = async (username, password, email) => {
   return response.data; // očekuješ token
 };
 
-export const registerUser = async (username, password, email, profile_image_url) => {
+export const registerUser = async (username, password, email, profileImageUrl) => {
   const response = await axios.post(`${API_BASE_URL}/users/register`, {
     username,
     password,
     email,
-    profile_image_url
+    profileImageUrl
   });
   return response.data; // očekuješ token
 };
