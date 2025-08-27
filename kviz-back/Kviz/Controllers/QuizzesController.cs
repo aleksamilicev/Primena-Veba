@@ -323,7 +323,7 @@ namespace Kviz.Controllers
                     Description = createQuizDto.Description,
                     Category = createQuizDto.Category,
                     Difficulty_Level = createQuizDto.DifficultyLevel,
-                    Number_Of_Questions = createQuizDto.NumberOfQuestions,
+                    Number_Of_Questions = 0, // Postavljamo na 0 jer još nema pitanja
                     Time_Limit = createQuizDto.TimeLimit
                 };
 

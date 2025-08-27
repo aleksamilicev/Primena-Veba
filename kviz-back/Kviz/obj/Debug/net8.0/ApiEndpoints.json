@@ -81,32 +81,6 @@
   },
   {
     "ContainingType": "Kviz.Controllers.QuestionsController",
-    "Method": "CreateQuestion",
-    "RelativePath": "api/Questions",
-    "HttpMethod": "POST",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "createQuestionDto",
-        "Type": "Kviz.DTOs.CreateQuestionDto",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": [
-      {
-        "Type": "Kviz.Models.Question",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
-  },
-  {
-    "ContainingType": "Kviz.Controllers.QuestionsController",
     "Method": "GetQuizQuestions",
     "RelativePath": "api/Questions/{id}/questions",
     "HttpMethod": "GET",
@@ -193,6 +167,37 @@
       }
     ],
     "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Kviz.Controllers.QuestionsController",
+    "Method": "CreateQuestion",
+    "RelativePath": "api/Questions/quiz/{quizId}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "quizId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "createQuestionDto",
+        "Type": "Kviz.DTOs.CreateQuestionDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "Kviz.Models.Question",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
   },
   {
     "ContainingType": "Kviz.Controllers.QuestionsController",

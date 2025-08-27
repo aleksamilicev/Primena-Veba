@@ -268,10 +268,23 @@
             }
           }
         }
-      },
+      }
+    },
+    "/api/Questions/quiz/{quizId}": {
       "post": {
         "tags": [
           "Questions"
+        ],
+        "parameters": [
+          {
+            "name": "quizId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
         ],
         "requestBody": {
           "content": {
@@ -1311,13 +1324,6 @@
           "DifficultyLevel": {
             "maxLength": 50,
             "type": "string",
-            "nullable": true
-          },
-          "NumberOfQuestions": {
-            "maximum": 99,
-            "minimum": 1,
-            "type": "integer",
-            "format": "int32",
             "nullable": true
           },
           "TimeLimit": {

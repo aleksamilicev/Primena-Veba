@@ -170,9 +170,9 @@ namespace Kviz.Controllers
 
 
         // CREATE - Kreiranje novog pitanja (samo admin)
-        [HttpPost]
+        [HttpPost("quiz/{quizId}")]
         [Authorize]
-        public async Task<ActionResult<Question>> CreateQuestion([FromBody] CreateQuestionDto createQuestionDto)
+        public async Task<ActionResult<Question>> CreateQuestion(int quizId, [FromBody] CreateQuestionDto createQuestionDto)
         {
             try
             {
@@ -180,22 +180,21 @@ namespace Kviz.Controllers
                 {
                     return Forbid("Samo administratori mogu kreirati pitanja");
                 }
-
                 if (!ModelState.IsValid)
                 {
                     return BadRequest(ModelState);
                 }
 
                 // Proveri da li kviz postoji
-                var quizExists = await _context.Quizzes.FindAsync(createQuestionDto.QuizId);
-                if (quizExists == null)
+                var quiz = await _context.Quizzes.FindAsync(quizId);
+                if (quiz == null)
                 {
-                    return BadRequest($"Kviz sa ID {createQuestionDto.QuizId} ne postoji");
+                    return BadRequest($"Kviz sa ID {quizId} ne postoji");
                 }
 
                 var question = new Question
                 {
-                    Quiz_Id = createQuestionDto.QuizId,
+                    Quiz_Id = quizId, // Koristimo quizId iz URL-a
                     Question_Text = createQuestionDto.QuestionText,
                     Question_Type = createQuestionDto.QuestionType,
                     Difficulty_Level = createQuestionDto.DifficultyLevel,
@@ -203,9 +202,14 @@ namespace Kviz.Controllers
                 };
 
                 _context.Questions.Add(question);
+
+                // Ažuriramo broj pitanja u kvizy
+                quiz.Number_Of_Questions++;
+                _context.Quizzes.Update(quiz);
+
                 await _context.SaveChangesAsync();
 
-                _logger.LogInformation($"Admin kreirao novo pitanje sa ID {question.Question_Id} za kviz {createQuestionDto.QuizId}");
+                _logger.LogInformation($"Admin kreirao novo pitanje sa ID {question.Question_Id} za kviz {quizId}. Kviz sada ima {quiz.Number_Of_Questions} pitanja.");
 
                 // Vraćamo DTO umesto entiteta da izbegnemo circular reference
                 var questionDto = new QuestionAdminDto
@@ -299,6 +303,14 @@ namespace Kviz.Controllers
                 if (question == null)
                 {
                     return NotFound($"Pitanje sa ID {questionId} ne postoji");
+                }
+
+                // Pronađi kviz da ažuriramo broj pitanja
+                var quiz = await _context.Quizzes.FindAsync(question.Quiz_Id);
+                if (quiz != null)
+                {
+                    quiz.Number_Of_Questions--;
+                    _context.Quizzes.Update(quiz);
                 }
 
                 _context.Questions.Remove(question);

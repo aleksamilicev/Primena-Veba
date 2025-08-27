@@ -18,8 +18,8 @@ namespace Kviz.DTOs
         public string? DifficultyLevel { get; set; }
 
 
-        [Range(1, 99, ErrorMessage = "Broj pitanja mora biti između 1 i 99")]
-        public int? NumberOfQuestions { get; set; }
+        //[Range(1, 99, ErrorMessage = "Broj pitanja mora biti između 1 i 99")]
+        //public int? NumberOfQuestions { get; set; }
 
         [Range(1, 999, ErrorMessage = "Vreme mora biti između 1 i 999")]
         public int? TimeLimit { get; set; }
