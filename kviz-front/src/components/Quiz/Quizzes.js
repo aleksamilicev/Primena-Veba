@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { getQuizzes } from "../../api/services/quizService";
+import { getQuizzes, deleteQuizById } from "../../api/services/quizService";
 import QuizCard from "./QuizCard";
 import QuizFilter from "./QuizFilter";
 import ProfileDropdown from "../Layout/ProfileDropdown";
@@ -73,20 +73,79 @@ const Quizzes = () => {
             <QuizCard quiz={quiz} />
             {/* Ako je admin, prikaži link za dodavanje pitanja */}
             {user?.isAdmin && (
-              <Link
-                to={`/admin/quizzes/${quiz.Quiz_Id}/add-question`}
-                style={{ 
-                  display: "block", 
-                  marginTop: "5px", 
-                  color: "#28a745",
-                  textDecoration: "none",
-                  fontSize: "14px",
-                  fontWeight: "bold"
-                }}
-              >
-                + Add Question to this Quiz
-              </Link>
-            )}
+  <>
+    <Link
+      to={`/admin/quizzes/${quiz.Quiz_Id}/add-question`}
+      style={{ 
+        display: "block", 
+        marginTop: "5px", 
+        color: "#28a745",
+        textDecoration: "none",
+        fontSize: "14px",
+        fontWeight: "bold"
+      }}
+    >
+      + Add Question to this Quiz
+    </Link>
+
+    <Link
+      to={`/admin/quizzes/${quiz.Quiz_Id}/questions`}
+      style={{ 
+        display: "block", 
+        marginTop: "5px", 
+        color: "#17a2b8",
+        textDecoration: "none",
+        fontSize: "14px",
+        fontWeight: "bold"
+      }}
+    >
+      View Questions
+    </Link>
+  </>
+)}
+
+{user?.isAdmin && (
+  <div style={{ marginTop: "5px" }}>
+    <Link
+      to={`/admin/quizzes/${quiz.Quiz_Id}/edit`}
+      style={{
+        marginRight: "10px",
+        color: "#ffc107",
+        textDecoration: "none",
+        fontSize: "14px",
+        fontWeight: "bold"
+      }}
+    >
+      Edit Quiz
+    </Link>
+
+    <button
+      onClick={async () => {
+        if (window.confirm("Are you sure you want to delete this quiz?")) {
+          try {
+            await deleteQuizById(quiz.Quiz_Id);
+            setQuizzes(quizzes.filter((q) => q.Quiz_Id !== quiz.Quiz_Id));
+            setFilteredQuizzes(filteredQuizzes.filter((q) => q.Quiz_Id !== quiz.Quiz_Id));
+          } catch (error) {
+            console.error("Failed to delete quiz:", error);
+            alert("Failed to delete quiz.");
+          }
+        }
+      }}
+      style={{
+        color: "#dc3545",
+        background: "none",
+        border: "none",
+        cursor: "pointer",
+        fontSize: "14px",
+        fontWeight: "bold"
+      }}
+    >
+      Delete Quiz
+    </button>
+  </div>
+)}
+
           </div>
         ))}
       </div>

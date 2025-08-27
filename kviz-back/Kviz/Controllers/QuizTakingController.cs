@@ -143,7 +143,7 @@ namespace Kviz.Controllers
                 {
                     User_Id = userId.Value,
                     Quiz_Id = quizId,
-                    Attempt_Id = attempt.Attempt_Id,  // ✅ veza sa attemptom
+                    Attempt_Id = attempt.Attempt_Id,  // veza sa attemptom
                     Question_Id = questionId,
                     User_Answer = submitAnswerDto.UserAnswer,
                     Is_Correct = correctFlag
@@ -431,19 +431,33 @@ namespace Kviz.Controllers
             }
         }
 
+        // Poboljšana metoda za proveru odgovora
         private bool CheckAnswer(string questionType, string correctAnswer, string userAnswer)
         {
-            if (string.IsNullOrEmpty(correctAnswer) || string.IsNullOrEmpty(userAnswer))
+            if (string.IsNullOrWhiteSpace(userAnswer) || string.IsNullOrWhiteSpace(correctAnswer))
                 return false;
 
-            return questionType?.ToLower() switch
+            switch (questionType?.ToLower())
             {
-                "multiple-choice" => CheckMultipleChoiceAnswer(correctAnswer, userAnswer),
-                "multiple-select" => CheckMultipleSelectAnswer(correctAnswer, userAnswer),
-                "true-false" => CheckTrueFalseAnswer(correctAnswer, userAnswer),
-                "fill-in-the-blank" => CheckFillInBlankAnswer(correctAnswer, userAnswer),
-                _ => false
-            };
+                case "true-false":
+                    return string.Equals(correctAnswer.Trim(), userAnswer.Trim(), StringComparison.OrdinalIgnoreCase);
+
+                case "fill-in-the-blank":
+                    // Za fill-in-the-blank možemo biti fleksibilniji sa poređenjem
+                    return string.Equals(correctAnswer.Trim(), userAnswer.Trim(), StringComparison.OrdinalIgnoreCase);
+
+                case "multi-select":
+                    // Proveri da li korisnik je izabrao sve tačne odgovore
+                    var correctAnswers = correctAnswer.Split(',').Select(a => a.Trim().ToUpper()).OrderBy(a => a).ToArray();
+                    var userAnswers = userAnswer.Split(',').Select(a => a.Trim().ToUpper()).OrderBy(a => a).ToArray();
+                    return correctAnswers.SequenceEqual(userAnswers);
+
+                case "one-select":
+                    return string.Equals(correctAnswer.Trim(), userAnswer.Trim(), StringComparison.OrdinalIgnoreCase);
+
+                default:
+                    return false;
+            }
         }
 
         private bool CheckMultipleChoiceAnswer(string correctAnswer, string userAnswer)

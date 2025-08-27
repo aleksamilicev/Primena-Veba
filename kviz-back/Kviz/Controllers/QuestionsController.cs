@@ -22,12 +22,18 @@ namespace Kviz.Controllers
             _logger = logger;
         }
 
-        // Postojeći endpointi - sada koriste direktno _context, OVO JE ZA KORISNIKE!!! I NE TREBA DA SE VIDI CORRECT ANSWER
-        [HttpGet("{id}/questions")]
-        public async Task<ActionResult<List<QuestionDto>>> GetQuizQuestions(int id)
+        // Postojeći endpointi - sada koriste direktno _context, OVO JE ZA ADMINE!!!
+        [HttpGet("quiz/{id}/questions")]
+        [Authorize]
+        public async Task<ActionResult<List<QuestionAdminDto>>> GetQuizQuestions(int id)
         {
             try
             {
+                if (!IsCurrentUserAdmin())
+                {
+                    return Forbid("Samo administratori mogu videti pitanja i odgovore za kviz");
+                }
+
                 // Proveri da li kviz postoji
                 var quizExists = await _context.Quizzes.FindAsync(id);
                 if (quizExists == null)
@@ -38,13 +44,14 @@ namespace Kviz.Controllers
                 // Dobij sva pitanja za taj kviz
                 var questions = await _context.Questions
                     .Where(q => q.Quiz_Id == id)
-                    .Select(q => new QuestionDto
+                    .Select(q => new QuestionAdminDto
                     {
                         QuestionId = q.Question_Id,
                         QuizId = q.Quiz_Id,
                         QuestionText = q.Question_Text,
                         QuestionType = q.Question_Type,
-                        DifficultyLevel = q.Difficulty_Level
+                        DifficultyLevel = q.Difficulty_Level,
+                        CorrectAnswer = q.Correct_Answer // uključeno za admin DTO
                     })
                     .ToListAsync();
 
@@ -168,6 +175,81 @@ namespace Kviz.Controllers
         }
 
 
+        // Validacija za multi-select pitanja
+        private bool ValidateMultiSelectFormat(string questionText, string correctAnswer)
+        {
+            // Proveri da li questionText sadrži opcije u formatu A:, B:, itd.
+            if (!System.Text.RegularExpressions.Regex.IsMatch(questionText, @"[A-Z]:\s*\w+"))
+            {
+                return false;
+            }
+
+            // Proveri da li correctAnswer sadrži slova odvojena zapetama
+            if (string.IsNullOrWhiteSpace(correctAnswer))
+            {
+                return false;
+            }
+
+            var answers = correctAnswer.Split(',').Select(a => a.Trim()).ToArray();
+            return answers.All(a => System.Text.RegularExpressions.Regex.IsMatch(a, @"^[A-Z]$"));
+        }
+
+        // Validacija za one-select pitanja
+        private bool ValidateOneSelectFormat(string questionText, string correctAnswer)
+        {
+            // Proveri da li questionText sadrži opcije u formatu A:, B:, itd.
+            if (!System.Text.RegularExpressions.Regex.IsMatch(questionText, @"[A-Z]:\s*\w+"))
+            {
+                return false;
+            }
+
+            // Proveri da li correctAnswer je jedno slovo
+            return !string.IsNullOrWhiteSpace(correctAnswer) &&
+                   System.Text.RegularExpressions.Regex.IsMatch(correctAnswer.Trim(), @"^[A-Z]$");
+        }
+
+        // Metoda za validaciju pitanja po tipu
+        private (bool IsValid, string ErrorMessage) ValidateQuestionByType(CreateQuestionDto dto)
+        {
+            var questionType = dto.QuestionType?.ToLower();
+
+            switch (questionType)
+            {
+                case "true-false":
+                    if (dto.CorrectAnswer?.ToLower() != "true" && dto.CorrectAnswer?.ToLower() != "false")
+                    {
+                        return (false, "Za tip pitanja 'true-false', tačan odgovor mora biti 'True' ili 'False'");
+                    }
+                    break;
+
+                case "fill-in-the-blank":
+                    if (string.IsNullOrWhiteSpace(dto.CorrectAnswer))
+                    {
+                        return (false, "Za tip pitanja 'fill-in-the-blank', morate uneti tačan odgovor");
+                    }
+                    break;
+
+                case "multi-select":
+                    if (!ValidateMultiSelectFormat(dto.QuestionText, dto.CorrectAnswer))
+                    {
+                        return (false, "Za tip pitanja 'multi-select', tekst pitanja mora sadržavati opcije (A:odgovor1, B:odgovor2...) i tačan odgovor mora biti u formatu poput 'A,B'");
+                    }
+                    break;
+
+                case "one-select":
+                    if (!ValidateOneSelectFormat(dto.QuestionText, dto.CorrectAnswer))
+                    {
+                        return (false, "Za tip pitanja 'one-select', tekst pitanja mora sadržavati opcije (A:odgovor1, B:odgovor2...) i tačan odgovor mora biti jedno slovo (A, B, C, D...)");
+                    }
+                    break;
+
+                default:
+                    return (false, "Nepoznat tip pitanja. Dozvoljeni tipovi: true-false, fill-in-the-blank, multi-select, one-select");
+            }
+
+            return (true, string.Empty);
+        }
+
 
         // CREATE - Kreiranje novog pitanja (samo admin)
         [HttpPost("quiz/{quizId}")]
@@ -180,9 +262,17 @@ namespace Kviz.Controllers
                 {
                     return Forbid("Samo administratori mogu kreirati pitanja");
                 }
+
                 if (!ModelState.IsValid)
                 {
                     return BadRequest(ModelState);
+                }
+
+                // Validacija tipova pitanja
+                var validationResult = ValidateQuestionByType(createQuestionDto);
+                if (!validationResult.IsValid)
+                {
+                    return BadRequest(validationResult.ErrorMessage);
                 }
 
                 // Proveri da li kviz postoji
@@ -194,7 +284,7 @@ namespace Kviz.Controllers
 
                 var question = new Question
                 {
-                    Quiz_Id = quizId, // Koristimo quizId iz URL-a
+                    Quiz_Id = quizId,
                     Question_Text = createQuestionDto.QuestionText,
                     Question_Type = createQuestionDto.QuestionType,
                     Difficulty_Level = createQuestionDto.DifficultyLevel,
@@ -203,7 +293,7 @@ namespace Kviz.Controllers
 
                 _context.Questions.Add(question);
 
-                // Ažuriramo broj pitanja u kvizy
+                // Ažuriramo broj pitanja u kvizu
                 quiz.Number_Of_Questions++;
                 _context.Quizzes.Update(quiz);
 
@@ -267,17 +357,36 @@ namespace Kviz.Controllers
                     question.Quiz_Id = updateQuestionDto.QuizId.Value;
                 }
 
-                // Ažuriranje polja
-                question.Question_Text = updateQuestionDto.QuestionText ?? question.Question_Text;
-                question.Question_Type = updateQuestionDto.QuestionType ?? question.Question_Type;
-                question.Difficulty_Level = updateQuestionDto.DifficultyLevel ?? question.Difficulty_Level;
+                // Ažuriranje polja - samo ako su poslata
+                if (!string.IsNullOrEmpty(updateQuestionDto.QuestionText))
+                    question.Question_Text = updateQuestionDto.QuestionText;
+
+                if (!string.IsNullOrEmpty(updateQuestionDto.QuestionType))
+                    question.Question_Type = updateQuestionDto.QuestionType;
+
+                if (!string.IsNullOrEmpty(updateQuestionDto.DifficultyLevel))
+                    question.Difficulty_Level = updateQuestionDto.DifficultyLevel;
+
+                if (!string.IsNullOrEmpty(updateQuestionDto.CorrectAnswer))
+                    question.Correct_Answer = updateQuestionDto.CorrectAnswer;
 
                 _context.Questions.Update(question);
                 await _context.SaveChangesAsync();
 
                 _logger.LogInformation($"Admin ažurirao pitanje sa ID {questionId}");
 
-                return Ok(question);
+                // Vraćamo DTO umesto entiteta
+                var questionDto = new QuestionAdminDto
+                {
+                    QuestionId = question.Question_Id,
+                    QuizId = question.Quiz_Id,
+                    QuestionText = question.Question_Text,
+                    QuestionType = question.Question_Type,
+                    DifficultyLevel = question.Difficulty_Level,
+                    CorrectAnswer = question.Correct_Answer
+                };
+
+                return Ok(questionDto);
             }
             catch (Exception ex)
             {

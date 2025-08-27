@@ -81,32 +81,6 @@
   },
   {
     "ContainingType": "Kviz.Controllers.QuestionsController",
-    "Method": "GetQuizQuestions",
-    "RelativePath": "api/Questions/{id}/questions",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "id",
-        "Type": "System.Int32",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": [
-      {
-        "Type": "System.Collections.Generic.List\u00601[[Kviz.DTOs.QuestionDto, Kviz, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
-  },
-  {
-    "ContainingType": "Kviz.Controllers.QuestionsController",
     "Method": "GetQuestion",
     "RelativePath": "api/Questions/question/{questionId}",
     "HttpMethod": "GET",
@@ -167,6 +141,32 @@
       }
     ],
     "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Kviz.Controllers.QuestionsController",
+    "Method": "GetQuizQuestions",
+    "RelativePath": "api/Questions/quiz/{id}/questions",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.List\u00601[[Kviz.DTOs.QuestionAdminDto, Kviz, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
   },
   {
     "ContainingType": "Kviz.Controllers.QuestionsController",

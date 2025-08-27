@@ -11,7 +11,9 @@ namespace Kviz.DTOs
         [MaxLength(1000, ErrorMessage = "Tekst pitanja ne može biti duži od 1000 karaktera")]
         public string QuestionText { get; set; }
 
-        [MaxLength(50, ErrorMessage = "Tip pitanja ne može biti duži od 50 karaktera")]
+        [Required(ErrorMessage = "Tip pitanja je obavezan")]
+        [RegularExpression(@"^(true-false|fill-in-the-blank|multi-select|one-select)$",
+        ErrorMessage = "Tip pitanja mora biti jedan od sledećih: true-false, fill-in-the-blank, multi-select, one-select")]
         public string? QuestionType { get; set; }
 
         [MaxLength(50, ErrorMessage = "Nivo težine ne može biti duži od 50 karaktera")]
