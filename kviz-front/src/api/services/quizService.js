@@ -17,3 +17,23 @@ export const getQuizzes = async () => {
     throw error;
   }
 };
+
+export const getQuizById = async (id) => {
+  const res = await axios.get(`${API_BASE_URL}/quizzes/${id}`);
+  return res.data;
+};
+
+export const createQuiz = async (quizData) => {
+  const res = await axios.post(`${API_BASE_URL}/quizzes`, quizData);
+  return res.data;
+};
+
+export const updateQuiz = async (id, quizData) => {
+  const res = await axios.put(`${API_BASE_URL}/quizzes/${id}`, quizData);
+  return res.data;
+};
+
+export const deleteQuiz = async (id) => {
+  const res = await axios.delete(`${API_BASE_URL}/quizzes/${id}`);
+  return res.data;
+};

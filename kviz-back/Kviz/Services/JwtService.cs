@@ -37,7 +37,7 @@ namespace Kviz.Services
                 var claims = new[]
                 {
                     new Claim(ClaimTypes.NameIdentifier, user.User_Id.ToString()),
-                    new Claim(ClaimTypes.Name, user.Username),
+                    new Claim("name", user.Username),
                     new Claim(ClaimTypes.Email, user.Email),
                     new Claim("IsAdmin", user.Is_Admin.ToString()),
                     new Claim(JwtRegisteredClaimNames.Sub, user.User_Id.ToString()),

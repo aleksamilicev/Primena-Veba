@@ -1,44 +1,29 @@
 import React, { useState } from "react";
-import User from "../../api/models/User";
+//import User from "../../api/models/User";
 import { loginUser } from "../../api/services/userService";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 
 const Login = () => {
-  const [usernameOrEmail, setUsernameOrEmail] = useState(""); // Polje za username ili email
+  const [usernameOrEmail, setUsernameOrEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleLogin = async (e) => {
     e.preventDefault();
 
-    // Ako je uneseno ime, koristimo ga kao username
-    // Ako je unesena email adresa, koristimo je kao email
     const isEmail = usernameOrEmail.includes('@');
-    
-    const user = {
-      username: isEmail ? "" : usernameOrEmail, // Ako je email, ostavi username prazan
-      email: isEmail ? usernameOrEmail : "", // Ako je username, ostavi email prazan
-      password,
-    };
-
-    console.log("Sending login request:", user);
+    const username = isEmail ? "" : usernameOrEmail;
+    const email = isEmail ? usernameOrEmail : "";
 
     try {
-      const result = await loginUser(user.username, user.password, user.email);
+      const result = await loginUser(username, password, email);
       console.log("Login response:", result);
 
-      // Čuvanje tokena i korisničkih podataka
-      localStorage.setItem("token", result.token);
-      localStorage.setItem(
-        "user",
-        JSON.stringify({
-          userId: result.userId,
-          username: result.username,
-          email: result.email,
-          isAdmin: result.isAdmin,
-        })
-      );
+      // Umesto da ovde stavljaš u localStorage, koristi login iz context-a
+      login(result.token);
 
       alert("Login successful!");
       navigate("/quizzes");
