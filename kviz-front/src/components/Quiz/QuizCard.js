@@ -1,5 +1,6 @@
 // src/components/Quiz/QuizCard.js
 import React from "react";
+import { Link } from 'react-router-dom';
 
 const QuizCard = ({ quiz }) => {
   return (
@@ -25,6 +26,21 @@ const QuizCard = ({ quiz }) => {
       <p>
         <strong>Time Limit:</strong> {quiz.Time_Limit} sec
       </p>
+
+      <Link 
+        to={`/quiz/${quiz.Quiz_Id}/take`}
+        style={{ 
+          padding: "10px 20px", 
+          backgroundColor: "#28a745", 
+          color: "white", 
+          textDecoration: "none", 
+          borderRadius: "5px",
+          display: "inline-block",
+          marginTop: "10px"
+        }}
+      >
+        Rešavaj kviz
+      </Link>
     </div>
   );
 };

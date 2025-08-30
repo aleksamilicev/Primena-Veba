@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using System.Text.RegularExpressions;
 
 namespace Kviz.Controllers
 {
@@ -61,13 +62,25 @@ namespace Kviz.Controllers
                 if (!questionEntities.Any())
                     return NotFound($"Kviz {quizId} nema pitanja");
 
-                var questions = questionEntities.Select(q => new QuestionForTakingDto
+                var questions = questionEntities.Select(q =>
                 {
-                    QuestionId = q.Question_Id,
-                    QuestionText = q.Question_Text,
-                    QuestionType = q.Question_Type,
-                    DifficultyLevel = q.Difficulty_Level,
-                    Options = GetOptionsForQuestion(q.Question_Type, q.Correct_Answer)
+                    // izvuci opcije
+                    var options = GetOptionsForQuestion(q.Question_Type, q.Question_Text, q.Correct_Answer);
+
+                    // očisti pitanje tako da ostane samo tekst pre "A:"
+                    var firstOptionIndex = q.Question_Text.IndexOf("A:", StringComparison.OrdinalIgnoreCase);
+                    string cleanQuestionText = q.Question_Text;
+                    if (firstOptionIndex > 0)
+                        cleanQuestionText = q.Question_Text.Substring(0, firstOptionIndex).Trim();
+
+                    return new QuestionForTakingDto
+                    {
+                        QuestionId = q.Question_Id,
+                        QuestionText = cleanQuestionText,
+                        QuestionType = q.Question_Type,
+                        DifficultyLevel = q.Difficulty_Level,
+                        Options = options
+                    };
                 }).ToList();
 
                 // 5. Formiraj response
@@ -93,6 +106,7 @@ namespace Kviz.Controllers
                 return StatusCode(500, $"Greška pri započinjanju kviza: {ex.Message}");
             }
         }
+
 
 
 
@@ -399,38 +413,106 @@ namespace Kviz.Controllers
             }
         }
 
-        // Helper metode
-        private List<string> GetOptionsForQuestion(string questionType, string correctAnswer)
+        // GET: api/quiz-taking/{quizId}/{questionId} - Dobijanje pitanja sa opcijama
+        [HttpGet("{quizId}/{questionId}")]
+        public async Task<IActionResult> GetQuestionWithOptions(int quizId, int questionId)
         {
-            return questionType?.ToLower() switch
-            {
-                "multiple-choice" => ParseMultipleChoiceOptions(correctAnswer),
-                "true-false" => new List<string> { "Tačno", "Netačno" },
-                _ => new List<string>()
-            };
-        }
-
-        private List<string> ParseMultipleChoiceOptions(string correctAnswer)
-        {
-            // Ova metoda treba da parsira opcije iz CORRECT_ANSWER polja
-            // Format može biti: "A) Prva opcija | B) Druga opcija | C) Treća opcija | D) Četvrta opcija [CORRECT: A]"
-            // Ili neki drugi format koji definirate
+            var userId = GetCurrentUserId();
+            if (userId == null)
+                return Unauthorized("Korisnik nije autentifikovan");
 
             try
             {
-                if (string.IsNullOrEmpty(correctAnswer))
-                    return new List<string>();
+                var question = await _context.Questions
+                    .Where(q => q.Question_Id == questionId && q.Quiz_Id == quizId)
+                    .Select(q => new
+                    {
+                        q.Question_Id,
+                        q.Question_Text,
+                        q.Question_Type,
+                        q.Difficulty_Level,
+                        q.Correct_Answer
+                    })
+                    .FirstOrDefaultAsync();
 
-                // Jednostavan parser - možete proširiti prema potrebi
-                var parts = correctAnswer.Split('|');
-                return parts.Select(p => p.Trim()).ToList();
+                if (question == null)
+                    return NotFound($"Pitanje sa ID {questionId} ne postoji u kvizu {quizId}");
+
+                // Generiši opcije na osnovu tipa pitanja
+                var options = GetOptionsForQuestion(question.Question_Type, question.Question_Text, question.Correct_Answer);
+
+                var response = new
+                {
+                    QuestionId = question.Question_Id,
+                    QuestionText = question.Question_Text,
+                    QuestionType = question.Question_Type,
+                    DifficultyLevel = question.Difficulty_Level,
+                    Options = options
+                };
+
+                return Ok(response);
             }
-            catch
+            catch (Exception ex)
             {
-                return new List<string>();
+                _logger.LogError(ex, "Greška pri dobijanju pitanja {QuestionId} iz kviza {QuizId}", questionId, quizId);
+                return StatusCode(500, "Greška pri dobijanju pitanja");
             }
         }
 
+
+        // Izmeni postojeći GET endpoint za kviz da uključi opcije za sva pitanja
+        [HttpGet("{quizId}")]
+        public async Task<IActionResult> GetQuizForTaking(int quizId)
+        {
+            var userId = GetCurrentUserId();
+            if (userId == null)
+                return Unauthorized("Korisnik nije autentifikovan");
+
+            try
+            {
+                var quiz = await _context.Quizzes
+                    .Where(q => q.Quiz_Id == quizId)
+                    .Include(q => q.Questions)
+                    .FirstOrDefaultAsync();
+
+                if (quiz == null)
+                    return NotFound($"Kviz sa ID {quizId} ne postoji");
+
+                // Nadji poslednji attempt korisnika
+                var latestAttempt = await _context.UserQuizAttempts
+                    .Where(a => a.User_Id == userId.Value && a.Quiz_Id == quizId)
+                    .OrderByDescending(a => a.Attempt_Date)
+                    .FirstOrDefaultAsync();
+
+                var questions = quiz.Questions?.Select(q => new
+                {
+                    QuestionId = q.Question_Id,
+                    QuestionText = q.Question_Text,
+                    QuestionType = q.Question_Type,
+                    DifficultyLevel = q.Difficulty_Level,
+                    Options = GetOptionsForQuestion(q.Question_Type, q.Question_Text, q.Correct_Answer)
+                }).ToList();
+
+                var response = new
+                {
+                    QuizId = quiz.Quiz_Id,
+                    QuizTitle = quiz.Title,
+                    AttemptNumber = latestAttempt?.Attempt_Id ?? 0,
+                    Questions = questions
+                };
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Greška pri dobijanju kviza {QuizId} za korisnika {UserId}", quizId, userId);
+                return StatusCode(500, "Greška pri dobijanju kviza");
+            }
+        }
+
+
+
+        // Helper metode
         // Poboljšana metoda za proveru odgovora
         private bool CheckAnswer(string questionType, string correctAnswer, string userAnswer)
         {
@@ -440,62 +522,113 @@ namespace Kviz.Controllers
             switch (questionType?.ToLower())
             {
                 case "true-false":
-                    return string.Equals(correctAnswer.Trim(), userAnswer.Trim(), StringComparison.OrdinalIgnoreCase);
+                    return CheckTrueFalseAnswer(correctAnswer, userAnswer);
 
                 case "fill-in-the-blank":
-                    // Za fill-in-the-blank možemo biti fleksibilniji sa poređenjem
-                    return string.Equals(correctAnswer.Trim(), userAnswer.Trim(), StringComparison.OrdinalIgnoreCase);
+                    return CheckFillInBlankAnswer(correctAnswer, userAnswer);
 
                 case "multi-select":
-                    // Proveri da li korisnik je izabrao sve tačne odgovore
-                    var correctAnswers = correctAnswer.Split(',').Select(a => a.Trim().ToUpper()).OrderBy(a => a).ToArray();
-                    var userAnswers = userAnswer.Split(',').Select(a => a.Trim().ToUpper()).OrderBy(a => a).ToArray();
-                    return correctAnswers.SequenceEqual(userAnswers);
+                    return CheckMultipleSelectAnswer(correctAnswer, userAnswer);
 
                 case "one-select":
-                    return string.Equals(correctAnswer.Trim(), userAnswer.Trim(), StringComparison.OrdinalIgnoreCase);
+                case "multiple-choice":
+                    return CheckSingleSelectAnswer(correctAnswer, userAnswer);
 
                 default:
                     return false;
             }
         }
 
-        private bool CheckMultipleChoiceAnswer(string correctAnswer, string userAnswer)
+        // Poboljšana metoda za izvlačenje opcija iz QuestionText
+        private List<string> GetOptionsForQuestion(string questionType, string questionText, string correctAnswer)
         {
-            // Format: "A) Opcija 1 | B) Opcija 2 | C) Opcija 3 [CORRECT: A]"
+            return questionType?.ToLower() switch
+            {
+                "multiple-choice" => ParseOptionsFromQuestionText(questionText),
+                "one-select" => ParseOptionsFromQuestionText(questionText),
+                "multi-select" => ParseOptionsFromQuestionText(questionText),
+                "true-false" => new List<string> { "Tačno", "Netačno" },
+                _ => new List<string>()
+            };
+        }
+
+        private List<string> ParseOptionsFromQuestionText(string questionText)
+        {
+            if (string.IsNullOrEmpty(questionText))
+                return new List<string>();
+
             try
             {
-                var correctPart = correctAnswer.Split("[CORRECT:").LastOrDefault()?.Replace("]", "").Trim();
-                return correctPart?.Equals(userAnswer.Trim(), StringComparison.OrdinalIgnoreCase) == true;
+                var options = new List<string>();
+
+                // Regex: traži A: nešto, B: nešto... sve do sledećeg slova ili kraja
+                var regex = new Regex(@"([A-H]):\s*([^,]+)(?:,|$)", RegexOptions.IgnoreCase);
+
+
+                var matches = regex.Matches(questionText);
+                foreach (Match match in matches)
+                {
+                    if (match.Groups.Count >= 3)
+                    {
+                        var letter = match.Groups[1].Value.ToUpper();      // A, B, C...
+                        var optionText = match.Groups[2].Value.Trim().TrimEnd(',', ' ');
+                        options.Add($"{letter}) {optionText}");
+                    }
+                }
+
+                return options;
             }
-            catch
+            catch (Exception ex)
             {
-                return correctAnswer.Trim().Equals(userAnswer.Trim(), StringComparison.OrdinalIgnoreCase);
+                System.Diagnostics.Debug.WriteLine($"Error parsing options: {ex.Message}");
+                return new List<string>();
             }
+        }
+
+
+
+
+
+
+        private bool CheckSingleSelectAnswer(string correctAnswer, string userAnswer)
+        {
+            // correctAnswer format: "A" ili "A,C" (uzmi prvi)
+            var correctLetter = correctAnswer.Split(',')[0].Trim().ToUpper();
+            var userLetter = userAnswer.Trim().ToUpper();
+
+            return correctLetter == userLetter;
         }
 
         private bool CheckMultipleSelectAnswer(string correctAnswer, string userAnswer)
-        {
-            // Format: "A,C,D" (više tačnih odgovora)
-            try
-            {
-                var correctAnswers = correctAnswer.Split(',').Select(a => a.Trim()).OrderBy(a => a);
-                var userAnswers = userAnswer.Split(',').Select(a => a.Trim()).OrderBy(a => a);
+{
+    // correctAnswer format: "A,C" 
+    // userAnswer format: "A,C"
+    try
+    {
+        var correctAnswers = correctAnswer.Split(',')
+            .Select(a => a.Trim().ToUpper())
+            .OrderBy(a => a)
+            .ToArray();
+        
+        var userAnswers = userAnswer.Split(',')
+            .Select(a => a.Trim().ToUpper())
+            .OrderBy(a => a)
+            .ToArray();
 
-                return correctAnswers.SequenceEqual(userAnswers);
-            }
-            catch
-            {
-                return false;
-            }
-        }
+        return correctAnswers.SequenceEqual(userAnswers);
+    }
+    catch
+    {
+        return false;
+    }
+}
 
         private bool CheckTrueFalseAnswer(string correctAnswer, string userAnswer)
         {
             var normalizedCorrect = correctAnswer.ToLower().Trim();
             var normalizedUser = userAnswer.ToLower().Trim();
 
-            // Mapiranje različitih formata na standardne vrednosti
+            // Mapiranje različitih formata
             var trueValues = new[] { "true", "tačno", "tacno", "да", "da", "1", "yes" };
             var falseValues = new[] { "false", "netačno", "netacno", "не", "ne", "0", "no" };
 
@@ -509,7 +642,6 @@ namespace Kviz.Controllers
 
         private bool CheckFillInBlankAnswer(string correctAnswer, string userAnswer)
         {
-            // Može podržavati više varijanti odgovora odvojenih sa "|"
             var correctVariants = correctAnswer.Split('|').Select(v => v.Trim().ToLower());
             var normalizedUserAnswer = userAnswer.Trim().ToLower();
 

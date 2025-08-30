@@ -11,6 +11,7 @@ import AddQuestion from './components/Quiz/AddQuestion';
 import QuizQuestions from './components/Quiz/QuizQuestions';
 import EditQuiz from './components/Quiz/EditQuiz';
 import EditQuestion from './components/Quiz/EditQuestion';
+import QuizTaking from './components/Quiz/QuizTaking';
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
         <Route path="/admin/quizzes/:quizId/questions" element={<QuizQuestions />} />
         <Route path="/admin/quizzes/:quizId/edit" element={<EditQuiz />} />
         <Route path="/admin/questions/:questionId/edit" element={<EditQuestion />} />
+        <Route path="/quiz/:quizId/take" element={<QuizTaking />} />
       </Routes>
     </Router>
   );

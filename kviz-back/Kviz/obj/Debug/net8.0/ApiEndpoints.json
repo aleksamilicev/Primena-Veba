@@ -249,6 +249,43 @@
   },
   {
     "ContainingType": "Kviz.Controllers.QuizTakingController",
+    "Method": "GetQuizForTaking",
+    "RelativePath": "api/quiz-taking/{quizId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "quizId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Kviz.Controllers.QuizTakingController",
+    "Method": "GetQuestionWithOptions",
+    "RelativePath": "api/quiz-taking/{quizId}/{questionId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "quizId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "questionId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Kviz.Controllers.QuizTakingController",
     "Method": "SubmitAnswer",
     "RelativePath": "api/quiz-taking/{quizId}/{questionId}/answer",
     "HttpMethod": "POST",
