@@ -13,6 +13,8 @@ import EditQuiz from './components/Quiz/EditQuiz';
 import EditQuestion from './components/Quiz/EditQuestion';
 import QuizTaking from './components/Quiz/QuizTaking';
 import MyResults from './components/Quiz/MyResults';
+import AllResults from './components/Quiz/AllResults';
+import Ranking from './components/Quiz/Ranking';
 
 function App() {
   return (
@@ -31,6 +33,8 @@ function App() {
         <Route path="/admin/questions/:questionId/edit" element={<EditQuestion />} />
         <Route path="/quiz/:quizId/take" element={<QuizTaking />} />
         <Route path="/my-results" element={<MyResults />} />
+        <Route path="/all-results" element={<AllResults />} />
+        <Route path="/ranking" element={<Ranking />} />
       </Routes>
     </Router>
   );

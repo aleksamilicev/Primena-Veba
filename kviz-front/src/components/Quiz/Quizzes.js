@@ -69,6 +69,15 @@ const Quizzes = () => {
       <Link to="/my-results" className="hover:underline">
   My Results
 </Link>
+<Link to="/ranking" className="hover:underline">
+     Ranking
+</Link>
+{user?.isAdmin && (
+  <Link to="/all-results" className="px-4 py-2 rounded-lg bg-blue-500 text-white">
+     All Results
+  </Link>
+)}
+
 
       <div className="quiz-list">
         {filteredQuizzes.map((quiz) => (
