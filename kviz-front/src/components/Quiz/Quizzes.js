@@ -66,7 +66,10 @@ const Quizzes = () => {
       )}
       
       <QuizFilter quizzes={quizzes} onFilter={handleFilter} />
-      
+      <Link to="/my-results" className="hover:underline">
+  My Results
+</Link>
+
       <div className="quiz-list">
         {filteredQuizzes.map((quiz) => (
           <div key={quiz.Quiz_Id}>
