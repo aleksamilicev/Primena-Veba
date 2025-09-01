@@ -1,0 +1,159 @@
+/* Pagination.css - Minimalistični dizajn */
+
+.pagination-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: white;
+  padding: 0.5rem;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.pagination-btn {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: #4a5568;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background: #f7fafc;
+  color: #2d3748;
+  transform: translateY(-1px);
+}
+
+.pagination-btn:disabled {
+  color: #cbd5e0;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.pagination-btn:disabled:hover {
+  background: transparent;
+}
+
+.page-numbers {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin: 0 0.5rem;
+}
+
+.page-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #4a5568;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.page-btn:hover:not(:disabled):not(.active) {
+  background: #f7fafc;
+  color: #2d3748;
+}
+
+.page-btn.active {
+  background: #4299e1;
+  color: white;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(66, 153, 225, 0.3);
+}
+
+.page-btn.dots {
+  cursor: default;
+  color: #a0aec0;
+}
+
+.page-btn.dots:hover {
+  background: transparent;
+  color: #a0aec0;
+}
+
+.page-info {
+  font-size: 0.85rem;
+  color: #718096;
+  font-weight: 500;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .pagination {
+    gap: 0.25rem;
+    padding: 0.375rem;
+  }
+  
+  .pagination-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 1rem;
+  }
+  
+  .page-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 0.85rem;
+  }
+  
+  .page-numbers {
+    margin: 0 0.25rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .pagination-container {
+    margin-top: 1.5rem;
+  }
+  
+  .pagination {
+    gap: 0.125rem;
+    padding: 0.25rem;
+  }
+  
+  .pagination-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 0.9rem;
+  }
+  
+  .page-btn {
+    width: 28px;
+    height: 28px;
+    font-size: 0.8rem;
+  }
+  
+  .page-numbers {
+    margin: 0;
+    gap: 0.125rem;
+  }
+  
+  .page-info {
+    font-size: 0.8rem;
+  }
+}

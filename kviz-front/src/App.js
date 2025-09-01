@@ -12,10 +12,14 @@ import QuizQuestions from './components/Quiz/QuizQuestions';
 import EditQuiz from './components/Quiz/EditQuiz';
 import EditQuestion from './components/Quiz/EditQuestion';
 import QuizTaking from './components/Quiz/QuizTaking';
-import MyResults from './components/Quiz/MyResults';
-import AllResults from './components/Quiz/AllResults';
-import Ranking from './components/Quiz/Ranking';
-import DetailedResults from "./components/Quiz/DetailedResults";
+//import MyResults from './components/Quiz/MyResults';
+//import AllResults from './components/Quiz/AllResults';
+//import Ranking from './components/Quiz/Ranking';
+//import DetailedResults from "./components/Quiz/DetailedResults";
+import AllResults from "./pages/admin/AllResults";
+import MyResults from "./pages/MyResults";
+import DetailedResults from "./pages/DetailedResults";
+import Ranking from "./pages/Ranking";
 
 function App() {
   return (
