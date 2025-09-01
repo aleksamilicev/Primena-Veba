@@ -82,7 +82,7 @@ namespace Kviz.Controllers
 
         // GET: api/quizresults/{resultId}
         [HttpGet("{resultId}")]
-        public async Task<IActionResult> GetResultDetails(int resultId)
+        public async Task<IActionResult> GetResultDetailss(int resultId)
         {
             var userId = GetCurrentUserId();
             if (userId == null)
@@ -179,6 +179,86 @@ namespace Kviz.Controllers
                 return StatusCode(500, $"Greška pri dohvatanju rezultata kviza: {ex.Message}");
             }
         }
+
+
+        // GET: api/quizresults/{resultId}/details
+        [HttpGet("{resultId}/details")]
+        public async Task<IActionResult> GetResultDetails(int resultId)
+        {
+            var userId = GetCurrentUserId();
+            if (userId == null)
+                return Unauthorized("Korisnik nije autentifikovan");
+
+            try
+            {
+                // 1. Dohvati rezultat i materializuj ga u memoriju
+                var quizResult = await _context.QuizResults
+                    .Include(qr => qr.Quiz)
+                    .Where(qr => qr.Result_Id == resultId && qr.User_Id == userId)
+                    .FirstOrDefaultAsync();
+
+                if (quizResult == null)
+                    return NotFound("Rezultat nije pronađen ili ne pripada korisniku");
+
+                var attemptId = quizResult.Attempt_Id;
+
+                // 2. Dohvati sve odgovore za taj attempt i materializuj u memoriju
+                var answers = await _context.Answers
+                    .Include(a => a.Question)
+                    .Where(a => a.Attempt_Id == attemptId && a.User_Id == userId)
+                    .ToListAsync(); // <--- materializacija u memoriji
+
+                // 3. Projekcija u memoriji
+                var answerDetails = answers.Select(a => new
+                {
+                    answerId = a.Answer_Id,
+                    questionId = a.Question_Id,
+                    questionText = a.Question?.Question_Text,
+                    questionType = a.Question?.Question_Type,
+                    correctAnswer = a.Question?.Correct_Answer,
+                    userAnswer = a.User_Answer,
+                    isCorrect = a.Is_Correct == 1
+                }).ToList();
+
+                // 4. Dohvati sve pokušaje korisnika za isti quiz
+                var userAttempts = await _context.QuizResults
+                    .Where(r => r.User_Id == userId && r.Quiz_Id == quizResult.Quiz_Id)
+                    .OrderBy(r => r.Completed_At)
+                    .Select(r => new {
+                        attemptId = r.Attempt_Id,
+                        scorePercentage = r.Score_Percentage,
+                        completedAt = r.Completed_At
+                    })
+                    .ToListAsync();
+
+                // 5. Sastavi response
+                var response = new
+                {
+                    resultId = quizResult.Result_Id,
+                    quizId = quizResult.Quiz_Id,
+                    quizTitle = quizResult.Quiz?.Title,
+                    attemptId = attemptId,
+                    totalQuestions = quizResult.Total_Questions,
+                    correctAnswers = quizResult.Correct_Answers,
+                    scorePercentage = Math.Round(quizResult.Score_Percentage, 2),
+                    timeTaken = quizResult.Time_Taken,
+                    completedAt = quizResult.Completed_At,
+                    answers = answerDetails,
+                    attemptsHistory = userAttempts
+                };
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Greška pri dohvatanju detalja rezultata {ResultId} za korisnika {UserId}", resultId, userId);
+                return StatusCode(500, $"Greška pri dohvatanju detalja rezultata: {ex.Message}");
+            }
+        }
+
+
+
+
 
 
         // GET: api/quizresults/my-stats

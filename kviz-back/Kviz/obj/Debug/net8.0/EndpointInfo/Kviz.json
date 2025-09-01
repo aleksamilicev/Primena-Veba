@@ -438,6 +438,29 @@
         }
       }
     },
+    "/api/QuizResults/{resultId}/details": {
+      "get": {
+        "tags": [
+          "QuizResults"
+        ],
+        "parameters": [
+          {
+            "name": "resultId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/QuizResults/my-stats": {
       "get": {
         "tags": [

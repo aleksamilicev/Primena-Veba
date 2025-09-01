@@ -38,6 +38,27 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("token");
   };
 
+  // Za istek tokena
+  useEffect(() => {
+    if (user?.token) {
+      const decoded = jwtDecode(user.token);
+      const exp = decoded.exp; // vreme u sekundama
+      const now = Date.now() / 1000;
+
+      if (exp < now) {
+        console.log("Token je istekao, logout");
+        logout();
+      } else {
+        const timeout = (exp - now) * 1000;
+        const timer = setTimeout(() => logout(), timeout);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [user]);
+
+
+
+
   return (
     <AuthContext.Provider value={{ user, login, logout }}>
       {children}

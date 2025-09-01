@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { BookOpen, Clock, CheckCircle, XCircle, ArrowRight, ArrowLeft, Trophy } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -17,6 +17,14 @@ const QuizTaking = () => {
   const [loading, setLoading] = useState(false);
   const [view, setView] = useState('starting'); // 'starting', 'takingQuiz', 'results'
   const [error, setError] = useState(null);
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const location = useLocation();
+
+    const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${String(secs).padStart(2, "0")}`;
+  };
 
   const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
@@ -41,58 +49,156 @@ const QuizTaking = () => {
     return response.json();
   };
 
+
+
   useEffect(() => {
-    if (quizId && !currentQuiz) {
-      startQuiz();
-    }
-  }, [quizId]);
+    let timer;
+    if (view === "takingQuiz" && currentAttempt?.startedAt) {
+      timer = setInterval(() => {
+        const start = new Date(currentAttempt.startedAt);
+        const now = new Date();
+        const elapsed = Math.floor((now - start) / 1000);
 
-  const startQuiz = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await apiCall(`/quiz-taking/${quizId}/start`, 'POST');
-      
-      // Konvertuj backend podatke u format koji frontend očekuje
-      const normalizedData = {
-        attemptId: data.AttemptId,
-        quizId: data.QuizId,
-        quizTitle: data.QuizTitle,
-        quizDescription: data.QuizDescription,
-        attemptNumber: data.AttemptNumber,
-        totalQuestions: data.TotalQuestions,
-        startedAt: data.StartedAt,
-        questions: data.Questions?.map(q => ({
-          questionId: q.QuestionId,
-          questionText: q.QuestionText,
-          questionType: q.QuestionType,
-          difficultyLevel: q.DifficultyLevel,
-          options: q.Options || []
-        })) || []
-      };
-      
-      setCurrentAttempt(normalizedData);
-      setCurrentQuiz(normalizedData);
-      setUserAnswers({});
-      setCurrentQuestionIndex(0);
-      setView('takingQuiz');
-    } catch (error) {
-      console.error('Greška pri pokretanju kviza:', error);
-      setError('Greška pri pokretanju kviza: ' + error.message);
+        setElapsedTime(elapsed);
+
+        // Auto-finish kad prođe 20 sekundi (stavi na 10minuta tj 600 sekundi)
+        if (elapsed >= 20) {
+          clearInterval(timer);
+          finishQuiz();
+        }
+      }, 1000);
     }
-    setLoading(false);
+    return () => clearInterval(timer);
+  }, [view, currentAttempt]);
+
+  // Koristimo useEffect da resetuje stanje kad se menja quizId
+useEffect(() => {
+  // Resetuj stanje kad god se promeni lokacija ili quizId
+  console.log('Lokacija ili quizId se promenili:', location.pathname, quizId);
+  
+  setCurrentQuiz(null);
+  setCurrentAttempt(null);
+  setUserAnswers({});
+  setCurrentQuestionIndex(0);
+  setQuizResult(null);
+  setElapsedTime(0);
+  setView('starting');
+  setError(null);
+  setLoading(false);
+  
+  if (quizId) {
+    console.log('Pokretanje kviza za ID:', quizId);
+    startQuiz();
+  }
+}, [quizId, location.pathname]);
+
+// Dodaj još jedan useEffect koji se okida samo jednom kada se komponenta mount-uje
+useEffect(() => {
+  console.log('QuizTaking komponenta je mount-ovana');
+  
+  // Cleanup funkcija koja se pozove kad se komponenta unmount-uje
+  return () => {
+    console.log('QuizTaking komponenta se unmount-uje - čišćenje stanja');
+    resetQuizState();
   };
+}, []); // Prazan dependency array = pozove se samo jednom
 
-  const submitAnswer = async (questionId, answer) => {
-    setLoading(true);
-    try {
-      const data = await apiCall(
-        `/quiz-taking/${currentQuiz.quizId}/${questionId}/answer`,
-        'POST',
-        { userAnswer: answer }
-      );
-      
-      setUserAnswers(prev => ({
+
+
+// Izmeni startQuiz funkciju da ne pravi dupli poziv
+const startQuiz = async () => {
+  if (loading) {
+    console.log('startQuiz već se izvršava, prekidamo dupli poziv');
+    return; // Spreči dupli poziv
+  }
+  
+  setLoading(true);
+  setError(null);
+  
+  console.log('Pokretanje kviza - resetovanje stanja za quizId:', quizId);
+  
+  try {
+    const data = await apiCall(`/quiz-taking/${quizId}/start`, 'POST');
+    
+    const normalizedData = {
+      attemptId: data.AttemptId,
+      quizId: data.QuizId,
+      quizTitle: data.QuizTitle,
+      quizDescription: data.QuizDescription,
+      attemptNumber: data.AttemptNumber,
+      totalQuestions: data.TotalQuestions,
+      startedAt: data.StartedAt,
+      questions: data.Questions?.map(q => ({
+        questionId: q.QuestionId,
+        questionText: q.QuestionText,
+        questionType: q.QuestionType,
+        difficultyLevel: q.DifficultyLevel,
+        options: q.Options || []
+      })) || []
+    };
+    
+    console.log('Kviz uspešno pokrenut:', {
+      attemptId: normalizedData.attemptId,
+      questionsCount: normalizedData.questions.length,
+      attemptNumber: normalizedData.attemptNumber
+    });
+    
+    setCurrentAttempt(normalizedData);
+    setCurrentQuiz(normalizedData);
+    setUserAnswers({}); // Ponovo eksplicitno resetuj
+    setCurrentQuestionIndex(0);
+    setView('takingQuiz');
+    
+  } catch (error) {
+    console.error('Greška pri pokretanju kviza:', error);
+    setError('Greška pri pokretanju kviza: ' + error.message);
+  }
+  
+  setLoading(false);
+};
+
+// Dodaj funkciju za resetovanje na početak komponente
+const resetQuizState = () => {
+  console.log('Eksplicitno resetovanje stanja kviza');
+  
+  setCurrentQuiz(null);
+  setCurrentAttempt(null);
+  setUserAnswers({});
+  setCurrentQuestionIndex(0);
+  setQuizResult(null);
+  setElapsedTime(0);
+  setView('starting');
+  setError(null);
+  setLoading(false);
+};
+
+useEffect(() => {
+  const handleBeforeUnload = () => {
+    resetQuizState(); // Očisti stanje pre zatvaranja
+  };
+  
+  window.addEventListener('beforeunload', handleBeforeUnload);
+  
+  return () => {
+    window.removeEventListener('beforeunload', handleBeforeUnload);
+  };
+}, []);
+
+  // Izmeni submitAnswer funkciju da bude sigurnija
+const submitAnswer = async (questionId, answer) => {
+  console.log(`Šalje se odgovor za pitanje ${questionId}:`, answer);
+  setLoading(true);
+  try {
+    const data = await apiCall(
+      `/quiz-taking/${currentQuiz.quizId}/${questionId}/answer`,
+      'POST',
+      { userAnswer: answer }
+    );
+    
+    console.log('Odgovor sa servera:', data);
+    
+    setUserAnswers(prev => {
+      const newAnswers = {
         ...prev,
         [questionId]: {
           answer,
@@ -100,13 +206,16 @@ const QuizTaking = () => {
           submitted: true,
           message: data.Message || data.message || 'Odgovor poslat'
         }
-      }));
-    } catch (error) {
-      console.error('Greška pri slanju odgovora:', error);
-      setError('Greška pri slanju odgovora: ' + error.message);
-    }
-    setLoading(false);
-  };
+      };
+      console.log('Novo stanje userAnswers:', newAnswers);
+      return newAnswers;
+    });
+  } catch (error) {
+    console.error('Greška pri slanju odgovora:', error);
+    setError('Greška pri slanju odgovora: ' + error.message);
+  }
+  setLoading(false);
+};
 
   const finishQuiz = async () => {
     if (!currentAttempt?.attemptId) {
@@ -126,7 +235,7 @@ const QuizTaking = () => {
         totalQuestions: data.TotalQuestions,
         correctAnswers: data.CorrectAnswers,
         scorePercentage: data.ScorePercentage,
-        timeTaken: data.TimeTaken,
+        timeTaken: elapsedTime,
         completedAt: data.CompletedAt,
         questionResults: data.QuestionResults?.map(qr => ({
           questionId: qr.QuestionId,
@@ -352,7 +461,7 @@ const debugQuestionData = (quizData) => {
           <div className="text-center">
             <p className="text-gray-600">Nema dostupnih pitanja za ovaj kviz.</p>
             <button
-              onClick={() => navigate('/quizzes')}
+              onClick={() => { resetQuizState(); navigate('/quizzes')}}
               className="mt-4 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
             >
               Povratak na kvizove
@@ -372,6 +481,8 @@ const debugQuestionData = (quizData) => {
               <div className="flex items-center space-x-4 text-sm text-gray-600">
                 <span>Pokušaj #{currentQuiz.attemptNumber}</span>
                 <span>{answeredCount}/{totalQuestions} odgovoreno</span>
+                <Clock className="h-4 w-4" />
+                <span>{formatTime(elapsedTime)} / 00:20</span>
               </div>
             </div>
             
@@ -567,12 +678,15 @@ const debugQuestionData = (quizData) => {
             </button>
             
             <button
-              onClick={() => window.location.reload()}
-              className="bg-green-600 text-white py-3 px-8 rounded-md hover:bg-green-700 transition-colors inline-flex items-center space-x-2"
-            >
-              <ArrowRight className="h-5 w-5" />
-              <span>Ponovi kviz</span>
-            </button>
+  onClick={() => {
+    setView('starting');
+    startQuiz(); // Umesto window.location.reload()
+  }}
+  className="bg-green-600 text-white py-3 px-8 rounded-md hover:bg-green-700 transition-colors inline-flex items-center space-x-2"
+>
+  <ArrowRight className="h-5 w-5" />
+  <span>Ponovi kviz</span>
+</button>
           </div>
         </div>
       </div>

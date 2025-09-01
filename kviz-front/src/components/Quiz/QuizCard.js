@@ -1,8 +1,42 @@
 // src/components/Quiz/QuizCard.js
-import React from "react";
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const QuizCard = ({ quiz }) => {
+  const [currentQuiz, setCurrentQuiz] = useState(null);
+  const [currentAttempt, setCurrentAttempt] = useState(null);
+  const [userAnswers, setUserAnswers] = useState({});
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [quizResult, setQuizResult] = useState(null);
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const [view, setView] = useState('starting'); // 'starting', 'takingQuiz', 'results'
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+
+
+  const resetQuizState = () => {
+  console.log('Eksplicitno resetovanje stanja kviza');
+  
+  setCurrentQuiz(null);
+  setCurrentAttempt(null);
+  setUserAnswers({});
+  setCurrentQuestionIndex(0);
+  setQuizResult(null);
+  setElapsedTime(0);
+  setView('starting');
+  setError(null);
+  setLoading(false);
+};
+
+  const handleStartQuiz = () => {
+    resetQuizState(); // Pozivaš funkciju za resetovanje stanja
+    navigate(`/quiz/${quiz.Quiz_Id}/take`); // Navigacija na stranicu kviza
+  };
+
+
+
+
   return (
     <div
       style={{
@@ -27,8 +61,8 @@ const QuizCard = ({ quiz }) => {
         <strong>Time Limit:</strong> {quiz.Time_Limit} sec
       </p>
 
-      <Link 
-        to={`/quiz/${quiz.Quiz_Id}/take`}
+      <button 
+        onClick={handleStartQuiz} // Kada korisnik klikne, poziva reset i navigaciju
         style={{ 
           padding: "10px 20px", 
           backgroundColor: "#28a745", 
@@ -40,7 +74,7 @@ const QuizCard = ({ quiz }) => {
         }}
       >
         Rešavaj kviz
-      </Link>
+      </button>
     </div>
   );
 };

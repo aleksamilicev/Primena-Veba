@@ -15,6 +15,7 @@ import QuizTaking from './components/Quiz/QuizTaking';
 import MyResults from './components/Quiz/MyResults';
 import AllResults from './components/Quiz/AllResults';
 import Ranking from './components/Quiz/Ranking';
+import DetailedResults from "./components/Quiz/DetailedResults";
 
 function App() {
   return (
@@ -35,6 +36,7 @@ function App() {
         <Route path="/my-results" element={<MyResults />} />
         <Route path="/all-results" element={<AllResults />} />
         <Route path="/ranking" element={<Ranking />} />
+        <Route path="/detailed-results/:resultId" element={<DetailedResults />} />
       </Routes>
     </Router>
   );
