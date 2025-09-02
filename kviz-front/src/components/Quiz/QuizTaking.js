@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { BookOpen, Clock, CheckCircle, XCircle, ArrowRight, ArrowLeft, Trophy } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -17,8 +17,9 @@ const QuizTaking = () => {
   const [loading, setLoading] = useState(false);
   const [view, setView] = useState('starting'); // 'starting', 'takingQuiz', 'results'
   const [error, setError] = useState(null);
-  const [elapsedTime, setElapsedTime] = useState(0);
   const location = useLocation();
+  const [elapsedTime, setElapsedTime] = useState(0);
+ 
 
     const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
@@ -105,8 +106,12 @@ useEffect(() => {
 
 
 
+const hasStartedQuiz = useRef(false);
 // Izmeni startQuiz funkciju da ne pravi dupli poziv
 const startQuiz = async () => {
+  if (hasStartedQuiz.current) return;
+  hasStartedQuiz.current = true;
+  setLoading(true);
   if (loading) {
     console.log('startQuiz već se izvršava, prekidamo dupli poziv');
     return; // Spreči dupli poziv
@@ -201,6 +206,7 @@ const submitAnswer = async (questionId, answer) => {
       const newAnswers = {
         ...prev,
         [questionId]: {
+          ...prev[questionId],
           answer,
           isCorrect: data.IsCorrect || data.isCorrect,
           submitted: true,
@@ -217,44 +223,56 @@ const submitAnswer = async (questionId, answer) => {
   setLoading(false);
 };
 
-  const finishQuiz = async () => {
-    if (!currentAttempt?.attemptId) {
-      setError('Nema aktivnog pokušaja kviza');
-      return;
+const finishQuiz = async () => {
+  if (!currentAttempt?.attemptId) {
+    setError('Nema aktivnog pokušaja kviza');
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    // Auto-submit svih odgovora koji još nisu poslati
+    for (const question of currentQuiz.questions) {
+      const questionId = question.questionId;
+      const answer = userAnswers[questionId]?.answer;
+      if (answer !== undefined && answer !== '' && !userAnswers[questionId]?.submitted) {
+        await submitAnswer(questionId, answer);
+      }
     }
 
-    setLoading(true);
-    try {
-      const data = await apiCall(`/quiz-taking/${currentAttempt.attemptId}/finish`, 'POST');
-      
-      // Normalizuj podatke za rezultate
-      const normalizedResult = {
-        resultId: data.ResultId,
-        quizTitle: data.QuizTitle,
-        attemptNumber: data.AttemptNumber,
-        totalQuestions: data.TotalQuestions,
-        correctAnswers: data.CorrectAnswers,
-        scorePercentage: data.ScorePercentage,
-        timeTaken: elapsedTime,
-        completedAt: data.CompletedAt,
-        questionResults: data.QuestionResults?.map(qr => ({
-          questionId: qr.QuestionId,
-          questionText: qr.QuestionText,
-          correctAnswer: qr.CorrectAnswer,
-          userAnswer: qr.UserAnswer,
-          isCorrect: qr.IsCorrect,
-          wasAnswered: qr.WasAnswered
-        })) || []
-      };
-      
-      setQuizResult(normalizedResult);
-      setView('results');
-    } catch (error) {
-      console.error('Greška pri završetku kviza:', error);
-      setError('Greška pri završetku kviza: ' + error.message);
-    }
-    setLoading(false);
-  };
+    const data = await apiCall(`/quiz-taking/${currentAttempt.attemptId}/finish`, 'POST');
+
+    const normalizedResult = {
+      resultId: data.ResultId,
+      quizTitle: data.QuizTitle,
+      attemptNumber: data.AttemptNumber,
+      totalQuestions: data.TotalQuestions,
+      correctAnswers: data.CorrectAnswers,
+      scorePercentage: data.ScorePercentage,
+      timeTaken: elapsedTime,
+      completedAt: data.CompletedAt,
+      questionResults: data.QuestionResults?.map(qr => ({
+        questionId: qr.QuestionId,
+        questionText: qr.QuestionText,
+        correctAnswer: qr.CorrectAnswer,
+        userAnswer: qr.UserAnswer,
+        isCorrect: qr.IsCorrect,
+        wasAnswered: qr.WasAnswered
+      })) || []
+    };
+
+    setQuizResult(normalizedResult);
+    setView('results');
+
+  } catch (error) {
+    console.error('Greška pri završetku kviza:', error);
+    setError('Greška pri završetku kviza: ' + error.message);
+  }
+
+  setLoading(false);
+};
+
 
   const handleAnswerChange = (questionId, answer) => {
     setUserAnswers(prev => ({

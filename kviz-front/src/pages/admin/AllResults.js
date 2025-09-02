@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
+import { Link } from 'react-router-dom';
 import { fetchAllResults } from "../../api/services/resultService";
 import { Result } from "../../api/models/Result";
 import ResultsTable from "../../components/Results/ResultsTable";
 import Pagination from "../../components/Results/Pagination";
+import "../../styles/AllResults.css";
 
 export default function AllResults() {
   const { user } = useAuth();
@@ -37,17 +39,21 @@ export default function AllResults() {
   }, [user, page]);
 
   if (!user?.isAdmin) {
-    return <p className="text-red-500 text-center mt-6">Access denied</p>;
+    return <p className="allresults-error">Access denied</p>;
   }
 
-  if (loading) return <p className="text-center mt-6">Loading results...</p>;
-  if (error) return <p className="text-center text-red-500 mt-6">{error}</p>;
+  if (loading) return <p className="allresults-loading">Loading results...</p>;
+  if (error) return <p className="allresults-error">{error}</p>;
 
   return (
-    <div className="max-w-6xl mx-auto mt-10 p-6 bg-white shadow-lg rounded-2xl">
-      <h2 className="text-2xl font-bold mb-4 text-center">📊 All Users' Results</h2>
+    <div className="allresults-container">
+                    <Link to="/quizzes" className="nav-link">
+                📚 Quizzes
+              </Link>
+      <h2 className="allresults-title">📊 All Users' Results</h2>
+
       {results.length === 0 ? (
-        <p className="text-gray-500 text-center">No results found.</p>
+        <p className="allresults-empty">No results found.</p>
       ) : (
         <>
           <ResultsTable results={results} />

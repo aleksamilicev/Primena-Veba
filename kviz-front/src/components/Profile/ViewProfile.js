@@ -1,6 +1,7 @@
 // src/components/Profile/ViewProfile.js
 import React, { useEffect, useState } from "react";
 import { getProfile } from "../../api/services/userService";
+import "../../styles/Profile.css";
 
 const ViewProfile = () => {
   const [user, setUser] = useState(null);
@@ -26,12 +27,12 @@ const ViewProfile = () => {
   if (error) return <p>{error}</p>;
 
   return (
-    <div>
+    <div className="profile-card">
       <h2>My Profile</h2>
       <img
         src={user.profileImageUrl || "https://via.placeholder.com/100"}
         alt="profile"
-        style={{ width: "100px", height: "100px", borderRadius: "50%" }}
+        className="profile-img"
       />
       <p><strong>Username:</strong> {user.username}</p>
       <p><strong>Email:</strong> {user.email}</p>

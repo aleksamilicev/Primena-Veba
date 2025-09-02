@@ -1,29 +1,30 @@
+import "../../styles/ResultsTable.css";
+
 export default function ResultsTable({ results }) {
   return (
-    <table className="w-full border-collapse border border-gray-300">
+    <table className="results-table">
       <thead>
-        <tr className="bg-gray-100">
-          <th className="border border-gray-300 px-4 py-2">User</th>
-          <th className="border border-gray-300 px-4 py-2">Email</th>
-          <th className="border border-gray-300 px-4 py-2">Quiz</th>
-          <th className="border border-gray-300 px-4 py-2">Score</th>
-          <th className="border border-gray-300 px-4 py-2">Time Taken</th>
-          <th className="border border-gray-300 px-4 py-2">Date</th>
+        <tr>
+          <th>User</th>
+          <th>Email</th>
+          <th>Quiz</th>
+          <th>Score</th>
+          <th>Time Taken</th>
+          <th>Date</th>
         </tr>
       </thead>
       <tbody>
         {results.map((result) => (
-          <tr key={result.resultId} className="hover:bg-gray-50">
-            <td className="border border-gray-300 px-4 py-2">{result.username}</td>
-            <td className="border border-gray-300 px-4 py-2">{result.userEmail}</td>
-            <td className="border border-gray-300 px-4 py-2">{result.quizTitle}</td>
-            <td className="border border-gray-300 px-4 py-2">
-              {result.correctAnswers}/{result.totalQuestions} ({result.scorePercentage}%)
+          <tr key={result.resultId}>
+            <td>{result.username}</td>
+            <td>{result.userEmail}</td>
+            <td>{result.quizTitle}</td>
+            <td>
+              {result.correctAnswers}/{result.totalQuestions} (
+              {result.scorePercentage}%)
             </td>
-            <td className="border border-gray-300 px-4 py-2">{result.timeTaken}s</td>
-            <td className="border border-gray-300 px-4 py-2">
-              {new Date(result.completedAt).toLocaleString()}
-            </td>
+            <td>{result.timeTaken}s</td>
+            <td>{new Date(result.completedAt).toLocaleString()}</td>
           </tr>
         ))}
       </tbody>

@@ -1,6 +1,7 @@
 // src/components/Profile/EditProfile.js
 import React, { useEffect, useState } from "react";
 import { getProfile, updateProfile } from "../../api/services/userService";
+import "../../styles/Profile.css";
 
 const EditProfile = () => {
   const [user, setUser] = useState({ username: "", email: "", profile_image_url: "" });
@@ -40,40 +41,27 @@ const EditProfile = () => {
   if (loading) return <p>Loading profile...</p>;
 
   return (
-    <div>
+    <div className="profile-card">
       <h2>Edit Profile</h2>
-      <form onSubmit={handleSubmit}>
-        <div>
+      <form className="profile-form" onSubmit={handleSubmit}>
+        <div className="form-group">
           <label>Username</label>
-          <input
-            type="text"
-            name="username"
-            value={user.username}
-            onChange={handleChange}
-            disabled
-          />
+          <input type="text" name="username" value={user.username} onChange={handleChange} disabled />
         </div>
-        <div>
+
+        <div className="form-group">
           <label>Email</label>
-          <input
-            type="email"
-            name="email"
-            value={user.email}
-            onChange={handleChange}
-          />
+          <input type="email" name="email" value={user.email} onChange={handleChange} />
         </div>
-        <div>
+
+        <div className="form-group">
           <label>Profile Image URL</label>
-          <input
-            type="text"
-            name="profile_image_url"
-            value={user.profile_image_url}
-            onChange={handleChange}
-          />
+          <input type="text" name="profile_image_url" value={user.profile_image_url} onChange={handleChange} />
         </div>
-        <button type="submit">Save Changes</button>
+
+        <button type="submit" className="save-btn">Save Changes</button>
       </form>
-      {message && <p>{message}</p>}
+      {message && <p className="profile-message">{message}</p>}
     </div>
   );
 };

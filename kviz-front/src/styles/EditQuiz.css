@@ -1,0 +1,90 @@
+/* src/styles/EditQuiz.css */
+
+.edit-quiz-container {
+  max-width: 600px;
+  margin: 40px auto;
+  padding: 25px;
+  background: #ffffff;
+  border-radius: 15px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+}
+
+.edit-quiz-title {
+  text-align: center;
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 25px;
+  color: #2c3e50;
+}
+
+.edit-quiz-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.edit-quiz-form label {
+  font-weight: 600;
+  margin-bottom: 6px;
+  margin-top: 12px;
+  color: #34495e;
+}
+
+.edit-quiz-form input,
+.edit-quiz-form textarea {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #dcdcdc;
+  font-size: 15px;
+  transition: 0.2s ease-in-out;
+}
+
+.edit-quiz-form input:focus,
+.edit-quiz-form textarea:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 5px rgba(52, 152, 219, 0.4);
+}
+
+.edit-quiz-form textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.save-btn {
+  margin-top: 20px;
+  padding: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  background: #3498db;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.save-btn:hover {
+  background: #2980b9;
+}
+
+.status-message {
+  margin-top: 15px;
+  text-align: center;
+  font-weight: 500;
+}
+
+.status-message:contains("✅") {
+  color: #27ae60;
+}
+
+.status-message:contains("❌"),
+.status-message:contains("⚠️") {
+  color: #e74c3c;
+}
+
+.loading-text {
+  text-align: center;
+  margin-top: 40px;
+  font-size: 18px;
+  color: #7f8c8d;
+}

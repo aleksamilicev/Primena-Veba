@@ -22,6 +22,9 @@ const Navbar = () => {
         <div className="navbar-menu">
           {user ? (
             <div className="user-section">
+              <Link to="/quizzes" className="nav-link">
+                📚 Quizzes
+              </Link>
               <span className="welcome-message">
                 Zdravo, <span className="username">{user.username}</span>
               </span>

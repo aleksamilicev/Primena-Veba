@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { createQuiz } from "../../api/services/quizService";
+import "../../styles/CreateQuiz.css";
 
 const CreateQuiz = () => {
   const navigate = useNavigate();
@@ -15,7 +16,6 @@ const CreateQuiz = () => {
   const [timeLimit, setTimeLimit] = useState(10);
   const [message, setMessage] = useState("");
 
-  // Učitaj sačuvane vrednosti iz localStorage pri mount-u
   useEffect(() => {
     const savedCategories = JSON.parse(localStorage.getItem("quizCategories")) || ["Istorija", "Programiranje", "MySQL"];
     const savedDifficulties = JSON.parse(localStorage.getItem("quizDifficulties")) || ["Lako", "Srednje", "Teško"];
@@ -29,7 +29,6 @@ const CreateQuiz = () => {
     const finalCategory = category === "new" ? newCategory : category;
     const finalDifficulty = difficulty === "new" ? newDifficulty : difficulty;
 
-    // Dodaj nove vrednosti u liste i sacuvaj u localStorage
     if (finalCategory && !categories.includes(finalCategory)) {
       const updatedCategories = [...categories, finalCategory];
       setCategories(updatedCategories);
@@ -53,13 +52,23 @@ const CreateQuiz = () => {
   };
 
   return (
-    <div>
-      <h2>Create Quiz</h2>
-      <form onSubmit={handleSubmit}>
-        <input type="text" placeholder="Title" value={title} onChange={(e) => setTitle(e.target.value)} required />
-        <input type="text" placeholder="Description" value={description} onChange={(e) => setDescription(e.target.value)} required />
+    <div className="create-quiz-container">
+      <h2 className="create-quiz-title">Create Quiz</h2>
+      <form className="create-quiz-form" onSubmit={handleSubmit}>
+        <input
+          type="text"
+          placeholder="Title"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          required
+        />
+        <textarea
+          placeholder="Description"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          required
+        />
 
-        {/* Category */}
         <select value={category} onChange={(e) => setCategory(e.target.value)} required>
           <option value="">Select category</option>
           {categories.map((cat) => (
@@ -68,10 +77,15 @@ const CreateQuiz = () => {
           <option value="new">New category...</option>
         </select>
         {category === "new" && (
-          <input type="text" placeholder="Enter new category" value={newCategory} onChange={(e) => setNewCategory(e.target.value)} required />
+          <input
+            type="text"
+            placeholder="Enter new category"
+            value={newCategory}
+            onChange={(e) => setNewCategory(e.target.value)}
+            required
+          />
         )}
 
-        {/* Difficulty */}
         <select value={difficulty} onChange={(e) => setDifficulty(e.target.value)} required>
           <option value="">Select difficulty</option>
           {difficulties.map((dif) => (
@@ -80,13 +94,26 @@ const CreateQuiz = () => {
           <option value="new">New difficulty...</option>
         </select>
         {difficulty === "new" && (
-          <input type="text" placeholder="Enter new difficulty" value={newDifficulty} onChange={(e) => setNewDifficulty(e.target.value)} required />
+          <input
+            type="text"
+            placeholder="Enter new difficulty"
+            value={newDifficulty}
+            onChange={(e) => setNewDifficulty(e.target.value)}
+            required
+          />
         )}
 
-        <input type="number" placeholder="Time Limit (minutes)" value={timeLimit} onChange={(e) => setTimeLimit(Number(e.target.value))} required />
+        <input
+          type="number"
+          placeholder="Time Limit (minutes)"
+          value={timeLimit}
+          onChange={(e) => setTimeLimit(Number(e.target.value))}
+          required
+        />
+
         <button type="submit">Create Quiz</button>
       </form>
-      {message && <p>{message}</p>}
+      {message && <p className="create-quiz-message">{message}</p>}
     </div>
   );
 };

@@ -1,5 +1,6 @@
 // src/components/Quiz/QuizFilter.js
 import React, { useState } from "react";
+import "../../styles/QuizFilter.css";
 
 const QuizFilter = ({ quizzes, onFilter }) => {
   const [category, setCategory] = useState("");
@@ -14,13 +15,12 @@ const QuizFilter = ({ quizzes, onFilter }) => {
   };
 
   return (
-    <div style={{ marginBottom: "20px" }}>
+    <div className="quiz-filter">
       <input
         type="text"
-        placeholder="Search..."
+        placeholder="🔍 Search..."
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        style={{ marginRight: "10px" }}
       />
 
       <select value={category} onChange={(e) => setCategory(e.target.value)}>
@@ -35,7 +35,6 @@ const QuizFilter = ({ quizzes, onFilter }) => {
       <select
         value={difficulty}
         onChange={(e) => setDifficulty(e.target.value)}
-        style={{ marginLeft: "10px" }}
       >
         <option value="">All Difficulties</option>
         {difficulties.map((diff, i) => (
@@ -45,11 +44,9 @@ const QuizFilter = ({ quizzes, onFilter }) => {
         ))}
       </select>
 
-      <button onClick={applyFilter} style={{ marginLeft: "10px" }}>
-        Apply Filter
-      </button>
+      <button onClick={applyFilter}>Apply Filter</button>
     </div>
   );
 };
 
-export default QuizFilter; // ← default export
+export default QuizFilter;
