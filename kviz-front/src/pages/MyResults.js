@@ -3,6 +3,7 @@ import { fetchMyResults } from "../api/services/resultService";
 import { Result } from "../api/models/Result";
 import MyResultsList from "../components/Results/MyResultsList";
 import Pagination from "../components/Results/Pagination";
+import { Link } from "react-router-dom";
 import "../styles/MyResults.css";
 
 export default function MyResults() {
@@ -75,6 +76,10 @@ export default function MyResults() {
   return (
     <div className="my-results-container">
       <div className="header-section">
+        <div className="nav-links">
+          <Link to="/">Home</Link>
+          <Link to="/quizzes">Kvizovi</Link>
+        </div>
         <h2 className="page-title">Moji rezultati</h2>
         {results.length > 0 && (
           <div className="stats-summary">

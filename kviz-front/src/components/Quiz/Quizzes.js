@@ -5,7 +5,7 @@ import QuizFilter from "./QuizFilter";
 import ProfileDropdown from "../Layout/ProfileDropdown";
 import { useAuth } from "../../context/AuthContext";
 import { Link } from "react-router-dom";
-import "../../styles/Quizzes.css"; // ← dodato
+import "../../styles/Quizzes.css"; 
 
 const Quizzes = () => {
   const [quizzes, setQuizzes] = useState([]);

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { BookOpen, Clock, CheckCircle, XCircle, ArrowRight, ArrowLeft, Trophy } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import '../../styles/QuizTaking.css';
 
 const QuizTaking = () => {
   const { quizId } = useParams();
@@ -15,13 +16,12 @@ const QuizTaking = () => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [quizResult, setQuizResult] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [view, setView] = useState('starting'); // 'starting', 'takingQuiz', 'results'
+  const [view, setView] = useState('starting');
   const [error, setError] = useState(null);
   const location = useLocation();
   const [elapsedTime, setElapsedTime] = useState(0);
- 
 
-    const formatTime = (seconds) => {
+  const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${String(secs).padStart(2, "0")}`;
@@ -50,8 +50,6 @@ const QuizTaking = () => {
     return response.json();
   };
 
-
-
   useEffect(() => {
     let timer;
     if (view === "takingQuiz" && currentAttempt?.startedAt) {
@@ -63,7 +61,7 @@ const QuizTaking = () => {
         setElapsedTime(elapsed);
 
         // Auto-finish kad prođe 20 sekundi (stavi na 10minuta tj 600 sekundi)
-        if (elapsed >= 20) {
+        if (elapsed >= 600) {
           clearInterval(timer);
           finishQuiz();
         }
@@ -73,207 +71,199 @@ const QuizTaking = () => {
   }, [view, currentAttempt]);
 
   // Koristimo useEffect da resetuje stanje kad se menja quizId
-useEffect(() => {
-  // Resetuj stanje kad god se promeni lokacija ili quizId
-  console.log('Lokacija ili quizId se promenili:', location.pathname, quizId);
-  
-  setCurrentQuiz(null);
-  setCurrentAttempt(null);
-  setUserAnswers({});
-  setCurrentQuestionIndex(0);
-  setQuizResult(null);
-  setElapsedTime(0);
-  setView('starting');
-  setError(null);
-  setLoading(false);
-  
-  if (quizId) {
-    console.log('Pokretanje kviza za ID:', quizId);
-    startQuiz();
-  }
-}, [quizId, location.pathname]);
-
-// Dodaj još jedan useEffect koji se okida samo jednom kada se komponenta mount-uje
-useEffect(() => {
-  console.log('QuizTaking komponenta je mount-ovana');
-  
-  // Cleanup funkcija koja se pozove kad se komponenta unmount-uje
-  return () => {
-    console.log('QuizTaking komponenta se unmount-uje - čišćenje stanja');
-    resetQuizState();
-  };
-}, []); // Prazan dependency array = pozove se samo jednom
-
-
-
-const hasStartedQuiz = useRef(false);
-// Izmeni startQuiz funkciju da ne pravi dupli poziv
-const startQuiz = async () => {
-  if (hasStartedQuiz.current) return;
-  hasStartedQuiz.current = true;
-  setLoading(true);
-  if (loading) {
-    console.log('startQuiz već se izvršava, prekidamo dupli poziv');
-    return; // Spreči dupli poziv
-  }
-  
-  setLoading(true);
-  setError(null);
-  
-  console.log('Pokretanje kviza - resetovanje stanja za quizId:', quizId);
-  
-  try {
-    const data = await apiCall(`/quiz-taking/${quizId}/start`, 'POST');
+  useEffect(() => {
+    console.log('Lokacija ili quizId se promenili:', location.pathname, quizId);
     
-    const normalizedData = {
-      attemptId: data.AttemptId,
-      quizId: data.QuizId,
-      quizTitle: data.QuizTitle,
-      quizDescription: data.QuizDescription,
-      attemptNumber: data.AttemptNumber,
-      totalQuestions: data.TotalQuestions,
-      startedAt: data.StartedAt,
-      questions: data.Questions?.map(q => ({
-        questionId: q.QuestionId,
-        questionText: q.QuestionText,
-        questionType: q.QuestionType,
-        difficultyLevel: q.DifficultyLevel,
-        options: q.Options || []
-      })) || []
+    setCurrentQuiz(null);
+    setCurrentAttempt(null);
+    setUserAnswers({});
+    setCurrentQuestionIndex(0);
+    setQuizResult(null);
+    setElapsedTime(0);
+    setView('starting');
+    setError(null);
+    setLoading(false);
+    
+    if (quizId) {
+      console.log('Pokretanje kviza za ID:', quizId);
+      startQuiz();
+    }
+  }, [quizId, location.pathname]);
+
+  useEffect(() => {
+    console.log('QuizTaking komponenta je mount-ovana');
+    
+    return () => {
+      console.log('QuizTaking komponenta se unmount-uje - čišćenje stanja');
+      resetQuizState();
+    };
+  }, []);
+
+  const hasStartedQuiz = useRef(false);
+  
+  const startQuiz = async () => {
+    if (hasStartedQuiz.current) return;
+    hasStartedQuiz.current = true;
+    setLoading(true);
+    if (loading) {
+      console.log('startQuiz već se izvršava, prekidamo dupli poziv');
+      return;
+    }
+    
+    setLoading(true);
+    setError(null);
+    
+    console.log('Pokretanje kviza - resetovanje stanja za quizId:', quizId);
+    
+    try {
+      const data = await apiCall(`/quiz-taking/${quizId}/start`, 'POST');
+      
+      const normalizedData = {
+        attemptId: data.AttemptId,
+        quizId: data.QuizId,
+        quizTitle: data.QuizTitle,
+        quizDescription: data.QuizDescription,
+        attemptNumber: data.AttemptNumber,
+        totalQuestions: data.TotalQuestions,
+        startedAt: data.StartedAt,
+        questions: data.Questions?.map(q => ({
+          questionId: q.QuestionId,
+          questionText: q.QuestionText,
+          questionType: q.QuestionType,
+          difficultyLevel: q.DifficultyLevel,
+          options: q.Options || []
+        })) || []
+      };
+      
+      console.log('Kviz uspešno pokrenut:', {
+        attemptId: normalizedData.attemptId,
+        questionsCount: normalizedData.questions.length,
+        attemptNumber: normalizedData.attemptNumber
+      });
+      
+      setCurrentAttempt(normalizedData);
+      setCurrentQuiz(normalizedData);
+      setUserAnswers({});
+      setCurrentQuestionIndex(0);
+      setView('takingQuiz');
+      
+    } catch (error) {
+      console.error('Greška pri pokretanju kviza:', error);
+      setError('Greška pri pokretanju kviza: ' + error.message);
+    }
+    
+    setLoading(false);
+  };
+
+  const resetQuizState = () => {
+    console.log('Eksplicitno resetovanje stanja kviza');
+    
+    setCurrentQuiz(null);
+    setCurrentAttempt(null);
+    setUserAnswers({});
+    setCurrentQuestionIndex(0);
+    setQuizResult(null);
+    setElapsedTime(0);
+    setView('starting');
+    setError(null);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      resetQuizState();
     };
     
-    console.log('Kviz uspešno pokrenut:', {
-      attemptId: normalizedData.attemptId,
-      questionsCount: normalizedData.questions.length,
-      attemptNumber: normalizedData.attemptNumber
-    });
+    window.addEventListener('beforeunload', handleBeforeUnload);
     
-    setCurrentAttempt(normalizedData);
-    setCurrentQuiz(normalizedData);
-    setUserAnswers({}); // Ponovo eksplicitno resetuj
-    setCurrentQuestionIndex(0);
-    setView('takingQuiz');
-    
-  } catch (error) {
-    console.error('Greška pri pokretanju kviza:', error);
-    setError('Greška pri pokretanju kviza: ' + error.message);
-  }
-  
-  setLoading(false);
-};
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, []);
 
-// Dodaj funkciju za resetovanje na početak komponente
-const resetQuizState = () => {
-  console.log('Eksplicitno resetovanje stanja kviza');
-  
-  setCurrentQuiz(null);
-  setCurrentAttempt(null);
-  setUserAnswers({});
-  setCurrentQuestionIndex(0);
-  setQuizResult(null);
-  setElapsedTime(0);
-  setView('starting');
-  setError(null);
-  setLoading(false);
-};
-
-useEffect(() => {
-  const handleBeforeUnload = () => {
-    resetQuizState(); // Očisti stanje pre zatvaranja
+  const submitAnswer = async (questionId, answer) => {
+    console.log(`Šalje se odgovor za pitanje ${questionId}:`, answer);
+    setLoading(true);
+    try {
+      const data = await apiCall(
+        `/quiz-taking/${currentQuiz.quizId}/${questionId}/answer`,
+        'POST',
+        { userAnswer: answer }
+      );
+      
+      console.log('Odgovor sa servera:', data);
+      
+      setUserAnswers(prev => {
+        const newAnswers = {
+          ...prev,
+          [questionId]: {
+            ...prev[questionId],
+            answer,
+            isCorrect: data.IsCorrect || data.isCorrect,
+            submitted: true,
+            message: data.Message || data.message || 'Odgovor poslat'
+          }
+        };
+        console.log('Novo stanje userAnswers:', newAnswers);
+        return newAnswers;
+      });
+    } catch (error) {
+      console.error('Greška pri slanju odgovora:', error);
+      setError('Greška pri slanju odgovora: ' + error.message);
+    }
+    setLoading(false);
   };
-  
-  window.addEventListener('beforeunload', handleBeforeUnload);
-  
-  return () => {
-    window.removeEventListener('beforeunload', handleBeforeUnload);
-  };
-}, []);
 
-  // Izmeni submitAnswer funkciju da bude sigurnija
-const submitAnswer = async (questionId, answer) => {
-  console.log(`Šalje se odgovor za pitanje ${questionId}:`, answer);
-  setLoading(true);
-  try {
-    const data = await apiCall(
-      `/quiz-taking/${currentQuiz.quizId}/${questionId}/answer`,
-      'POST',
-      { userAnswer: answer }
-    );
-    
-    console.log('Odgovor sa servera:', data);
-    
-    setUserAnswers(prev => {
-      const newAnswers = {
-        ...prev,
-        [questionId]: {
-          ...prev[questionId],
-          answer,
-          isCorrect: data.IsCorrect || data.isCorrect,
-          submitted: true,
-          message: data.Message || data.message || 'Odgovor poslat'
-        }
-      };
-      console.log('Novo stanje userAnswers:', newAnswers);
-      return newAnswers;
-    });
-  } catch (error) {
-    console.error('Greška pri slanju odgovora:', error);
-    setError('Greška pri slanju odgovora: ' + error.message);
-  }
-  setLoading(false);
-};
-
-const finishQuiz = async () => {
-  if (!currentAttempt?.attemptId) {
-    setError('Nema aktivnog pokušaja kviza');
-    return;
-  }
-
-  setLoading(true);
-
-  try {
-    // Auto-submit svih odgovora koji još nisu poslati
-    for (const question of currentQuiz.questions) {
-      const questionId = question.questionId;
-      const answer = userAnswers[questionId]?.answer;
-      if (answer !== undefined && answer !== '' && !userAnswers[questionId]?.submitted) {
-        await submitAnswer(questionId, answer);
-      }
+  const finishQuiz = async () => {
+    if (!currentAttempt?.attemptId) {
+      setError('Nema aktivnog pokušaja kviza');
+      return;
     }
 
-    const data = await apiCall(`/quiz-taking/${currentAttempt.attemptId}/finish`, 'POST');
+    setLoading(true);
 
-    const normalizedResult = {
-      resultId: data.ResultId,
-      quizTitle: data.QuizTitle,
-      attemptNumber: data.AttemptNumber,
-      totalQuestions: data.TotalQuestions,
-      correctAnswers: data.CorrectAnswers,
-      scorePercentage: data.ScorePercentage,
-      timeTaken: elapsedTime,
-      completedAt: data.CompletedAt,
-      questionResults: data.QuestionResults?.map(qr => ({
-        questionId: qr.QuestionId,
-        questionText: qr.QuestionText,
-        correctAnswer: qr.CorrectAnswer,
-        userAnswer: qr.UserAnswer,
-        isCorrect: qr.IsCorrect,
-        wasAnswered: qr.WasAnswered
-      })) || []
-    };
+    try {
+      for (const question of currentQuiz.questions) {
+        const questionId = question.questionId;
+        const answer = userAnswers[questionId]?.answer;
+        if (answer !== undefined && answer !== '' && !userAnswers[questionId]?.submitted) {
+          await submitAnswer(questionId, answer);
+        }
+      }
 
-    setQuizResult(normalizedResult);
-    setView('results');
+      const data = await apiCall(`/quiz-taking/${currentAttempt.attemptId}/finish`, 'POST');
 
-  } catch (error) {
-    console.error('Greška pri završetku kviza:', error);
-    setError('Greška pri završetku kviza: ' + error.message);
-  }
+      const normalizedResult = {
+        resultId: data.ResultId,
+        quizTitle: data.QuizTitle,
+        attemptNumber: data.AttemptNumber,
+        totalQuestions: data.TotalQuestions,
+        correctAnswers: data.CorrectAnswers,
+        scorePercentage: data.ScorePercentage,
+        timeTaken: elapsedTime,
+        completedAt: data.CompletedAt,
+        questionResults: data.QuestionResults?.map(qr => ({
+          questionId: qr.QuestionId,
+          questionText: qr.QuestionText,
+          correctAnswer: qr.CorrectAnswer,
+          userAnswer: qr.UserAnswer,
+          isCorrect: qr.IsCorrect,
+          wasAnswered: qr.WasAnswered
+        })) || []
+      };
 
-  setLoading(false);
-};
+      setQuizResult(normalizedResult);
+      setView('results');
 
+    } catch (error) {
+      console.error('Greška pri završetku kviza:', error);
+      setError('Greška pri završetku kviza: ' + error.message);
+    }
 
+    setLoading(false);
+  };
+
+  
   const handleAnswerChange = (questionId, answer) => {
     setUserAnswers(prev => ({
       ...prev,
@@ -293,158 +283,134 @@ const finishQuiz = async () => {
   };
 
   const renderQuestionInput = (question) => {
-  const questionId = question.questionId;
-  const userAnswer = userAnswers[questionId];
+    const questionId = question.questionId;
+    const userAnswer = userAnswers[questionId];
 
-  // Debug log da vidiš šta stiže
-  console.log('Question:', question);
-  console.log('Options:', question.options);
+    console.log('Question:', question);
+    console.log('Options:', question.options);
 
-  switch (question.questionType?.toLowerCase()) {
-    case 'true-false':
-      return (
-        <div className="space-y-3">
-          {question.options && question.options.length > 0 ? (
-            question.options.map((option, index) => (
-              <label key={index} className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-gray-50 cursor-pointer">
-                <input
-                  type="radio"
-                  name={`question-${questionId}`}
-                  value={option}
-                  checked={userAnswer?.answer === option}
-                  onChange={(e) => handleAnswerChange(questionId, e.target.value)}
-                  disabled={userAnswer?.submitted}
-                  className="text-blue-600 focus:ring-blue-500"
-                />
-                <span className="text-lg">{option}</span>
-              </label>
-            ))
-          ) : (
-            // Fallback ako opcije ne stižu
-            ['Tačno', 'Netačno'].map((option, index) => (
-              <label key={index} className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-gray-50 cursor-pointer">
-                <input
-                  type="radio"
-                  name={`question-${questionId}`}
-                  value={option}
-                  checked={userAnswer?.answer === option}
-                  onChange={(e) => handleAnswerChange(questionId, e.target.value)}
-                  disabled={userAnswer?.submitted}
-                  className="text-blue-600 focus:ring-blue-500"
-                />
-                <span className="text-lg">{option}</span>
-              </label>
-            ))
-          )}
-        </div>
-      );
-
-    case 'multiple-choice':
-    case 'one-select':
-      return (
-        <div className="space-y-3">
-          {question.options && question.options.length > 0 ? (
-            question.options.map((option, index) => {
-              // Za "A) Java" izvuci "A"
-              const optionValue = option.charAt(0);
-              return (
-                <label key={index} className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-gray-50 cursor-pointer">
+    switch (question.questionType?.toLowerCase()) {
+      case 'true-false':
+        return (
+          <div className="quiz-options">
+            {question.options && question.options.length > 0 ? (
+              question.options.map((option, index) => (
+                <label key={index} className="quiz-option">
                   <input
                     type="radio"
                     name={`question-${questionId}`}
-                    value={optionValue}
-                    checked={userAnswer?.answer === optionValue}
+                    value={option}
+                    checked={userAnswer?.answer === option}
                     onChange={(e) => handleAnswerChange(questionId, e.target.value)}
                     disabled={userAnswer?.submitted}
-                    className="text-blue-600 focus:ring-blue-500"
                   />
-                  <span className="text-lg">{option}</span>
+                  <span>{option}</span>
                 </label>
-              );
-            })
-          ) : (
-            <div className="text-red-500">Nema dostupnih opcija za ovo pitanje</div>
-          )}
-        </div>
-      );
-
-    case 'multi-select':
-      return (
-        <div className="space-y-3">
-          {question.options && question.options.length > 0 ? (
-            question.options.map((option, index) => {
-              // Za "A) Java" izvuci "A"
-              const optionValue = option.charAt(0);
-              const selectedAnswers = userAnswer?.answer ? userAnswer.answer.split(',').map(a => a.trim()) : [];
-              return (
-                <label key={index} className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-gray-50 cursor-pointer">
+              ))
+            ) : (
+              ['Tačno', 'Netačno'].map((option, index) => (
+                <label key={index} className="quiz-option">
                   <input
-                    type="checkbox"
-                    value={optionValue}
-                    checked={selectedAnswers.includes(optionValue)}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      let newAnswers = [...selectedAnswers];
-                      if (e.target.checked) {
-                        newAnswers.push(value);
-                      } else {
-                        newAnswers = newAnswers.filter(a => a !== value);
-                      }
-                      // Sortiraj odgovore da budu konzistentni
-                      newAnswers.sort();
-                      handleAnswerChange(questionId, newAnswers.join(','));
-                    }}
+                    type="radio"
+                    name={`question-${questionId}`}
+                    value={option}
+                    checked={userAnswer?.answer === option}
+                    onChange={(e) => handleAnswerChange(questionId, e.target.value)}
                     disabled={userAnswer?.submitted}
-                    className="text-blue-600 focus:ring-blue-500"
                   />
-                  <span className="text-lg">{option}</span>
+                  <span>{option}</span>
                 </label>
-              );
-            })
-          ) : (
-            <div className="text-red-500">Nema dostupnih opcija za ovo pitanje</div>
-          )}
-        </div>
-      );
+              ))
+            )}
+          </div>
+        );
 
-    case 'fill-in-the-blank':
-      return (
-        <input
-          type="text"
-          value={userAnswer?.answer || ''}
-          onChange={(e) => handleAnswerChange(questionId, e.target.value)}
-          disabled={userAnswer?.submitted}
-          placeholder="Unesite odgovor..."
-          className="w-full px-4 py-3 text-lg border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-        />
-      );
+      case 'multiple-choice':
+      case 'one-select':
+        return (
+          <div className="quiz-options">
+            {question.options && question.options.length > 0 ? (
+              question.options.map((option, index) => {
+                const optionValue = option.charAt(0);
+                return (
+                  <label key={index} className="quiz-option">
+                    <input
+                      type="radio"
+                      name={`question-${questionId}`}
+                      value={optionValue}
+                      checked={userAnswer?.answer === optionValue}
+                      onChange={(e) => handleAnswerChange(questionId, e.target.value)}
+                      disabled={userAnswer?.submitted}
+                    />
+                    <span>{option}</span>
+                  </label>
+                );
+              })
+            ) : (
+              <div className="error-message">Nema dostupnih opcija za ovo pitanje</div>
+            )}
+          </div>
+        );
 
-    default:
-      return <div className="text-red-500">Nepoznat tip pitanja: {question.questionType}</div>;
-  }
-};
+      case 'multi-select':
+        return (
+          <div className="quiz-options">
+            {question.options && question.options.length > 0 ? (
+              question.options.map((option, index) => {
+                const optionValue = option.charAt(0);
+                const selectedAnswers = userAnswer?.answer ? userAnswer.answer.split(',').map(a => a.trim()) : [];
+                return (
+                  <label key={index} className="quiz-option multi-select">
+                    <input
+                      type="checkbox"
+                      value={optionValue}
+                      checked={selectedAnswers.includes(optionValue)}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        let newAnswers = [...selectedAnswers];
+                        if (e.target.checked) {
+                          newAnswers.push(value);
+                        } else {
+                          newAnswers = newAnswers.filter(a => a !== value);
+                        }
+                        newAnswers.sort();
+                        handleAnswerChange(questionId, newAnswers.join(','));
+                      }}
+                      disabled={userAnswer?.submitted}
+                    />
+                    <span>{option}</span>
+                  </label>
+                );
+              })
+            ) : (
+              <div className="error-message">Nema dostupnih opcija za ovo pitanje</div>
+            )}
+          </div>
+        );
 
-// Dodaj debug funkciju da vidiš šta tačno stiže sa servera
-const debugQuestionData = (quizData) => {
-  console.log('Quiz data received:', quizData);
-  if (quizData.questions) {
-    quizData.questions.forEach((q, index) => {
-      console.log(`Question ${index + 1}:`, {
-        id: q.questionId,
-        type: q.questionType,
-        text: q.questionText,
-        options: q.options
-      });
-    });
-  }
-};
+      case 'fill-in-the-blank':
+        return (
+          <input
+            type="text"
+            value={userAnswer?.answer || ''}
+            onChange={(e) => handleAnswerChange(questionId, e.target.value)}
+            disabled={userAnswer?.submitted}
+            placeholder="Unesite odgovor..."
+            className="quiz-text-input"
+          />
+        );
+
+      default:
+        return <div className="error-message">Nepoznat tip pitanja: {question.questionType}</div>;
+    }
+  };
 
   if (loading && view === 'starting') {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Pokretanje kviza...</p>
+      <div className="quiz-container">
+        <div className="loading-screen">
+          <div className="loading-spinner"></div>
+          <p>Pokretanje kviza...</p>
         </div>
       </div>
     );
@@ -452,14 +418,14 @@ const debugQuestionData = (quizData) => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center max-w-md mx-auto">
-          <XCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Greška</h2>
-          <p className="text-gray-600 mb-4">{error}</p>
+      <div className="quiz-container">
+        <div className="error-screen">
+          <XCircle className="error-icon" />
+          <h2>Greška</h2>
+          <p>{error}</p>
           <button
             onClick={() => navigate('/quizzes')}
-            className="bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
+            className="btn btn-primary"
           >
             Povratak na kvizove
           </button>
@@ -475,12 +441,12 @@ const debugQuestionData = (quizData) => {
 
     if (!currentQuestion) {
       return (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-          <div className="text-center">
-            <p className="text-gray-600">Nema dostupnih pitanja za ovaj kviz.</p>
+        <div className="quiz-container">
+          <div className="error-screen">
+            <p>Nema dostupnih pitanja za ovaj kviz.</p>
             <button
               onClick={() => { resetQuizState(); navigate('/quizzes')}}
-              className="mt-4 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
+              className="btn btn-primary"
             >
               Povratak na kvizove
             </button>
@@ -490,59 +456,61 @@ const debugQuestionData = (quizData) => {
     }
 
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-4xl mx-auto px-4">
+      <div className="quiz-container">
+        <div className="quiz-content">
           {/* Header */}
-          <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-            <div className="flex justify-between items-center mb-4">
-              <h1 className="text-2xl font-bold text-gray-900">{currentQuiz.quizTitle}</h1>
-              <div className="flex items-center space-x-4 text-sm text-gray-600">
+          <header className="quiz-header">
+            <div className="quiz-title-section">
+              <h1>{currentQuiz.quizTitle}</h1>
+              <div className="quiz-meta">
                 <span>Pokušaj #{currentQuiz.attemptNumber}</span>
                 <span>{answeredCount}/{totalQuestions} odgovoreno</span>
-                <Clock className="h-4 w-4" />
-                <span>{formatTime(elapsedTime)} / 00:20</span>
+                <div className="time-display">
+                  <Clock size={16} />
+                  <span>{formatTime(elapsedTime)} / 10:00</span>
+                </div>
               </div>
             </div>
             
-            {/* Progress bar */}
-            <div className="w-full bg-gray-200 rounded-full h-3">
-              <div 
-                className="bg-blue-600 h-3 rounded-full transition-all duration-300"
-                style={{ width: `${totalQuestions > 0 ? (answeredCount / totalQuestions) * 100 : 0}%` }}
-              ></div>
+            <div className="progress-section">
+              <div className="progress-bar">
+                <div 
+                  className="progress-fill"
+                  style={{ width: `${totalQuestions > 0 ? (answeredCount / totalQuestions) * 100 : 0}%` }}
+                ></div>
+              </div>
             </div>
-          </div>
+          </header>
 
           {/* Question */}
-          <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-            <div className="mb-6">
-              <div className="flex justify-between items-center mb-4">
-                <span className="text-sm text-gray-500">
-                  Pitanje {currentQuestionIndex + 1} od {totalQuestions}
-                </span>
-                <span className="text-sm px-3 py-1 bg-blue-100 text-blue-800 rounded-full">
-                  {currentQuestion.difficultyLevel || 'N/A'}
-                </span>
+          <main className="question-section">
+            <div className="question-header">
+              <div className="question-counter">
+                Pitanje {currentQuestionIndex + 1} od {totalQuestions}
               </div>
-              <h2 className="text-xl font-semibold text-gray-900 mb-6">
-                {currentQuestion.questionText}
-              </h2>
+              <div className="difficulty-badge">
+                {currentQuestion.difficultyLevel || 'N/A'}
+              </div>
             </div>
+            
+            <h2 className="question-text">
+              {currentQuestion.questionText}
+            </h2>
 
-            <div className="mb-6">
+            <div className="answer-section">
               {renderQuestionInput(currentQuestion)}
             </div>
 
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
+            <div className="question-actions">
+              <div className="answer-status">
                 {userAnswers[currentQuestion.questionId]?.submitted && (
                   <>
                     {userAnswers[currentQuestion.questionId]?.isCorrect ? (
-                      <CheckCircle className="h-6 w-6 text-green-600" />
+                      <CheckCircle className="status-icon correct" />
                     ) : (
-                      <XCircle className="h-6 w-6 text-red-600" />
+                      <XCircle className="status-icon incorrect" />
                     )}
-                    <span className="text-sm text-gray-600">
+                    <span>
                       {userAnswers[currentQuestion.questionId]?.message || 'Odgovor poslat'}
                     </span>
                   </>
@@ -557,36 +525,32 @@ const debugQuestionData = (quizData) => {
                   userAnswers[currentQuestion.questionId]?.submitted || 
                   loading
                 }
-                className="bg-green-600 text-white py-2 px-6 rounded-md hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                className="btn btn-submit"
               >
                 {loading ? 'Šalje se...' : 'Potvrdi odgovor'}
               </button>
             </div>
-          </div>
+          </main>
 
           {/* Navigation */}
-          <div className="flex justify-between items-center">
+          <nav className="quiz-navigation">
             <button
               onClick={() => setCurrentQuestionIndex(Math.max(0, currentQuestionIndex - 1))}
               disabled={currentQuestionIndex === 0}
-              className="flex items-center space-x-2 py-2 px-4 text-gray-600 hover:text-gray-800 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors"
+              className="btn btn-nav"
             >
-              <ArrowLeft className="h-4 w-4" />
-              <span>Prethodno pitanje</span>
+              <ArrowLeft size={16} />
+              <span>Prethodno</span>
             </button>
 
-            <div className="flex space-x-2">
+            <div className="question-indicators">
               {currentQuiz.questions?.map((_, index) => (
                 <button
                   key={index}
                   onClick={() => setCurrentQuestionIndex(index)}
-                  className={`w-10 h-10 rounded-full text-sm font-medium transition-colors ${
-                    index === currentQuestionIndex
-                      ? 'bg-blue-600 text-white'
-                      : userAnswers[currentQuiz.questions[index].questionId]?.submitted
-                      ? 'bg-green-200 text-green-800 hover:bg-green-300'
-                      : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
-                  }`}
+                  className={`question-indicator ${
+                    index === currentQuestionIndex ? 'active' : ''
+                  } ${userAnswers[currentQuiz.questions[index].questionId]?.submitted ? 'answered' : ''}`}
                 >
                   {index + 1}
                 </button>
@@ -597,22 +561,22 @@ const debugQuestionData = (quizData) => {
               <button
                 onClick={finishQuiz}
                 disabled={answeredCount < totalQuestions || loading}
-                className="bg-red-600 text-white py-2 px-6 rounded-md hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center space-x-2"
+                className="btn btn-finish"
               >
-                <Trophy className="h-4 w-4" />
+                <Trophy size={16} />
                 <span>{loading ? 'Završava se...' : 'Završi kviz'}</span>
               </button>
             ) : (
               <button
                 onClick={() => setCurrentQuestionIndex(Math.min(totalQuestions - 1, currentQuestionIndex + 1))}
                 disabled={currentQuestionIndex === totalQuestions - 1}
-                className="flex items-center space-x-2 py-2 px-4 text-gray-600 hover:text-gray-800 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors"
+                className="btn btn-nav"
               >
-                <span>Sledeće pitanje</span>
-                <ArrowRight className="h-4 w-4" />
+                <span>Sledeće</span>
+                <ArrowRight size={16} />
               </button>
             )}
-          </div>
+          </nav>
         </div>
       </div>
     );
@@ -620,92 +584,95 @@ const debugQuestionData = (quizData) => {
 
   if (view === 'results' && quizResult) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-4xl mx-auto px-4">
+      <div className="quiz-container">
+        <div className="results-content">
           {/* Results Header */}
-          <div className="bg-white rounded-lg shadow-sm p-8 mb-6 text-center">
-            <Trophy className="h-20 w-20 text-yellow-500 mx-auto mb-4" />
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Kviz završen!</h1>
-            <h2 className="text-xl text-gray-700 mb-6">{quizResult.quizTitle}</h2>
+          <header className="results-header">
+            <Trophy className="trophy-icon" />
+            <h1>Kviz završen!</h1>
+            <h2>{quizResult.quizTitle}</h2>
             
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-8">
-              <div className="text-center">
-                <div className="text-3xl font-bold text-blue-600">{quizResult.correctAnswers}</div>
-                <div className="text-sm text-gray-600 mt-1">Tačni odgovori</div>
+            <div className="results-stats">
+              <div className="stat-item">
+                <div className="stat-number correct">{quizResult.correctAnswers}</div>
+                <div className="stat-label">Tačni odgovori</div>
               </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-gray-800">{quizResult.totalQuestions}</div>
-                <div className="text-sm text-gray-600 mt-1">Ukupno pitanja</div>
+              <div className="stat-item">
+                <div className="stat-number total">{quizResult.totalQuestions}</div>
+                <div className="stat-label">Ukupno pitanja</div>
               </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-green-600">{quizResult.scorePercentage}%</div>
-                <div className="text-sm text-gray-600 mt-1">Procenat</div>
+              <div className="stat-item">
+                <div className="stat-number percentage">{quizResult.scorePercentage}%</div>
+                <div className="stat-label">Procenat</div>
               </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-purple-600 flex items-center justify-center">
-                  <Clock className="h-6 w-6 mr-2" />
+              <div className="stat-item">
+                <div className="stat-number time">
+                  <Clock size={20} />
                   {Math.floor((quizResult.timeTaken || 0) / 60)}:{String((quizResult.timeTaken || 0) % 60).padStart(2, '0')}
                 </div>
-                <div className="text-sm text-gray-600 mt-1">Vreme</div>
+                <div className="stat-label">Vreme</div>
               </div>
             </div>
-          </div>
+          </header>
 
           {/* Question Results */}
-          <div className="space-y-4 mb-8">
-            <h3 className="text-xl font-semibold text-gray-900">Detalji odgovora</h3>
-            {quizResult.questionResults?.map((result, index) => (
-              <div key={result.questionId} className="bg-white rounded-lg shadow-sm p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <h4 className="font-medium text-gray-900 flex-1 pr-4">
-                    <span className="text-blue-600 font-bold">{index + 1}.</span> {result.questionText}
-                  </h4>
-                  {result.isCorrect ? (
-                    <CheckCircle className="h-7 w-7 text-green-600 flex-shrink-0" />
-                  ) : (
-                    <XCircle className="h-7 w-7 text-red-600 flex-shrink-0" />
-                  )}
-                </div>
-                
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-start">
-                    <span className="font-medium text-gray-700 w-20">Vaš odgovor:</span>
-                    <span className={`font-medium ${result.isCorrect ? 'text-green-600' : 'text-red-600'}`}>
-                      {result.userAnswer || 'Nema odgovora'}
-                    </span>
+          <section className="results-details">
+            <h3>Detalji odgovora</h3>
+            <div className="question-results">
+              {quizResult.questionResults?.map((result, index) => (
+                <div key={result.questionId} className="result-item">
+                  <div className="result-header">
+                    <h4>
+                      <span className="question-number">{index + 1}.</span> 
+                      {result.questionText}
+                    </h4>
+                    {result.isCorrect ? (
+                      <CheckCircle className="result-icon correct" />
+                    ) : (
+                      <XCircle className="result-icon incorrect" />
+                    )}
                   </div>
-                  {!result.isCorrect && result.correctAnswer && (
-                    <div className="flex items-start">
-                      <span className="font-medium text-gray-700 w-20">Tačan odgovor:</span>
-                      <span className="text-green-600 font-medium">{result.correctAnswer}</span>
+                  
+                  <div className="result-details">
+                    <div className="answer-row">
+                      <span className="answer-label">Vaš odgovor:</span>
+                      <span className={`answer-value ${result.isCorrect ? 'correct' : 'incorrect'}`}>
+                        {result.userAnswer || 'Nema odgovora'}
+                      </span>
                     </div>
-                  )}
+                    {!result.isCorrect && result.correctAnswer && (
+                      <div className="answer-row">
+                        <span className="answer-label">Tačan odgovor:</span>
+                        <span className="answer-value correct">{result.correctAnswer}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          </section>
 
           {/* Actions */}
-          <div className="text-center space-x-4">
+          <footer className="results-actions">
             <button
               onClick={() => navigate('/quizzes')}
-              className="bg-blue-600 text-white py-3 px-8 rounded-md hover:bg-blue-700 transition-colors inline-flex items-center space-x-2"
+              className="btn btn-primary"
             >
-              <BookOpen className="h-5 w-5" />
+              <BookOpen size={18} />
               <span>Povratak na kvizove</span>
             </button>
             
             <button
-  onClick={() => {
-    setView('starting');
-    startQuiz(); // Umesto window.location.reload()
-  }}
-  className="bg-green-600 text-white py-3 px-8 rounded-md hover:bg-green-700 transition-colors inline-flex items-center space-x-2"
->
-  <ArrowRight className="h-5 w-5" />
-  <span>Ponovi kviz</span>
-</button>
-          </div>
+              onClick={() => {
+                setView('starting');
+                startQuiz();
+              }}
+              className="btn btn-secondary"
+            >
+              <ArrowRight size={18} />
+              <span>Ponovi kviz</span>
+            </button>
+          </footer>
         </div>
       </div>
     );
