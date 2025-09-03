@@ -20,10 +20,21 @@ const QuizTaking = () => {
   const [error, setError] = useState(null);
   const location = useLocation();
   const [elapsedTime, setElapsedTime] = useState(0);
+  const [timeLimit, setTimeLimit] = useState(600); // Default 10 minuta
 
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
+    return `${mins}:${String(secs).padStart(2, "0")}`;
+  };
+
+    // Format time limit za prikaz
+  const formatTimeLimit = (seconds) => {
+    if (!seconds) return "∞";
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    if (mins === 0) return `${secs}s`;
+    if (secs === 0) return `${mins}:00`;
     return `${mins}:${String(secs).padStart(2, "0")}`;
   };
 
@@ -60,15 +71,15 @@ const QuizTaking = () => {
 
         setElapsedTime(elapsed);
 
-        // Auto-finish kad prođe 20 sekundi (stavi na 10minuta tj 600 sekundi)
-        if (elapsed >= 600) {
+        // Auto-finish kad prođe vremenska granica
+        if (elapsed >= timeLimit) {
           clearInterval(timer);
           finishQuiz();
         }
       }, 1000);
     }
     return () => clearInterval(timer);
-  }, [view, currentAttempt]);
+  }, [view, currentAttempt, timeLimit]);
 
   // Koristimo useEffect da resetuje stanje kad se menja quizId
   useEffect(() => {
@@ -80,6 +91,7 @@ const QuizTaking = () => {
     setCurrentQuestionIndex(0);
     setQuizResult(null);
     setElapsedTime(0);
+    setTimeLimit(600);
     setView('starting');
     setError(null);
     setLoading(false);
@@ -126,6 +138,7 @@ const QuizTaking = () => {
         attemptNumber: data.AttemptNumber,
         totalQuestions: data.TotalQuestions,
         startedAt: data.StartedAt,
+        timeLimit: data.TimeLimit,
         questions: data.Questions?.map(q => ({
           questionId: q.QuestionId,
           questionText: q.QuestionText,
@@ -134,6 +147,10 @@ const QuizTaking = () => {
           options: q.Options || []
         })) || []
       };
+
+      // Postavi time limit iz backend-a ili default
+      const quizTimeLimit = normalizedData.timeLimit || 600; // 10 min default ako je null
+      setTimeLimit(quizTimeLimit);
       
       console.log('Kviz uspešno pokrenut:', {
         attemptId: normalizedData.attemptId,
@@ -164,6 +181,7 @@ const QuizTaking = () => {
     setCurrentQuestionIndex(0);
     setQuizResult(null);
     setElapsedTime(0);
+    setTimeLimit(600);
     setView('starting');
     setError(null);
     setLoading(false);
@@ -467,7 +485,7 @@ const QuizTaking = () => {
                 <span>{answeredCount}/{totalQuestions} odgovoreno</span>
                 <div className="time-display">
                   <Clock size={16} />
-                  <span>{formatTime(elapsedTime)} / 10:00</span>
+                  <span>{formatTime(elapsedTime)} / {formatTimeLimit(timeLimit)}</span>
                 </div>
               </div>
             </div>

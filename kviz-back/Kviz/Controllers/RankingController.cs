@@ -4,14 +4,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
-/*
- * Primer uporabe:
- * 
- * GET /api/ranking/quiz/1/top?limit=10
- * GET /api/ranking/quiz/1/my-position
- * GET /api/ranking/global?page=1&pageSize=20
- */
-
 namespace Kviz.Controllers
 {
     [ApiController]

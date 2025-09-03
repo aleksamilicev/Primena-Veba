@@ -93,7 +93,8 @@ namespace Kviz.Controllers
                     AttemptNumber = attemptNumber,
                     TotalQuestions = questions.Count,
                     Questions = questions,
-                    StartedAt = attempt.Attempt_Date ?? DateTime.UtcNow
+                    StartedAt = attempt.Attempt_Date ?? DateTime.UtcNow,
+                    TimeLimit = quiz.Time_Limit
                 };
 
                 _logger.LogInformation($"Korisnik {userId} započeo kviz {quizId}, pokušaj #{attemptNumber}");

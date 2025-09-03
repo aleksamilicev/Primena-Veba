@@ -11,5 +11,6 @@
         public int TotalQuestions { get; set; }
         public List<QuestionForTakingDto> Questions { get; set; } = new List<QuestionForTakingDto>();
         public DateTime StartedAt { get; set; }
+        public int? TimeLimit { get; set; } // Vreme trajanja kviza
     }
 }
