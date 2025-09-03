@@ -52,12 +52,8 @@ namespace Kviz.Controllers
                                   question => question.Question_Id,
                                   (answer, question) => question)
                             .Count(q => q.Quiz_Id == a.Quiz_Id),
-                        // Replace this line in GetMyActiveAttempts() and ResumeAttempt():
-                        // TimeElapsed = (int)(DateTime.UtcNow - a.Attempt_Date).TotalSeconds
 
-                        // with the following null-safe calculation:
                         TimeElapsed = a.Attempt_Date.HasValue ? (int)(DateTime.UtcNow - a.Attempt_Date.Value).TotalSeconds : 0
-                        //TimeElapsed = (int)(DateTime.UtcNow - a.Attempt_Date).TotalSeconds
                     })
                     .ToListAsync();
 
@@ -133,11 +129,8 @@ namespace Kviz.Controllers
                             Options = GetOptionsForQuestion(q.Question_Type, q.Correct_Answer)
                         })
                         .ToList(),
-                    // Replace this line in ResumeAttempt():
-                    // TimeElapsed = (int)(DateTime.UtcNow - attempt.Attempt_Date).TotalSeconds
 
                     TimeElapsed = attempt.Attempt_Date.HasValue ? (int)(DateTime.UtcNow - attempt.Attempt_Date.Value).TotalSeconds : 0
-                    //TimeElapsed = (int)(DateTime.UtcNow - attempt.Attempt_Date).TotalSeconds
                 };
 
                 return Ok(resumeData);
@@ -235,32 +228,4 @@ namespace Kviz.Controllers
         }
     }
 
-    // DTO-ovi za ActiveAttemptsController
-    public class ActiveAttemptDto
-    {
-        public int AttemptId { get; set; }
-        public int QuizId { get; set; }
-        public string QuizTitle { get; set; }
-        public int AttemptNumber { get; set; }
-        public DateTime StartedAt { get; set; }
-        public int TotalQuestions { get; set; }
-        public int AnsweredQuestions { get; set; }
-        public int TimeElapsed { get; set; } // u sekundama
-        public double Progress => TotalQuestions > 0 ? (double)AnsweredQuestions / TotalQuestions * 100 : 0;
-    }
-
-    public class ResumeAttemptDto
-    {
-        public int AttemptId { get; set; }
-        public int QuizId { get; set; }
-        public string QuizTitle { get; set; }
-        public int AttemptNumber { get; set; }
-        public DateTime StartedAt { get; set; }
-        public int TotalQuestions { get; set; }
-        public int AnsweredQuestions { get; set; }
-        public int RemainingQuestions { get; set; }
-        public List<QuestionForTakingDto> NextQuestions { get; set; } = new List<QuestionForTakingDto>();
-        public int TimeElapsed { get; set; }
-        public double Progress => TotalQuestions > 0 ? (double)AnsweredQuestions / TotalQuestions * 100 : 0;
-    }
 }

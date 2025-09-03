@@ -69,50 +69,6 @@ namespace Kviz.Controllers
             }
         }
 
-        /*
-        // nisam bas siguran da li je ovo potrebno, ali ako jeste, onda je ovo endpoint za dobijanje kviza sa pitanjima
-        [HttpGet("{id}/with-questions")]
-        public async Task<ActionResult<QuizWithQuestionsDto>> GetQuizWithQuestions(int id)
-        {
-            try
-            {
-                var quiz = await _context.Quizzes
-                    .Include(q => q.Questions)
-                    .FirstOrDefaultAsync(q => q.Quiz_Id == id);
-
-                if (quiz == null)
-                {
-                    return NotFound($"Kviz sa ID: {id} nije pronađen");
-                }
-
-                var quizWithQuestions = new QuizWithQuestionsDto
-                {
-                    QuizId = quiz.Quiz_Id,
-                    Title = quiz.Title,
-                    Description = quiz.Description,
-                    Category = quiz.Category,
-                    DifficultyLevel = quiz.Difficulty_Level,
-                    Questions = quiz.Questions?.Select(q => new QuestionDto
-                    {
-                        QuestionId = q.Question_Id,
-                        QuizId = q.Quiz_Id,
-                        QuestionText = q.Question_Text,
-                        QuestionType = q.Question_Type,
-                        DifficultyLevel = q.Difficulty_Level,
-                        CorrectAnswer = q.Correct_Answer
-                    }).ToList() ?? new List<QuestionDto>()
-                };
-
-                return Ok(quizWithQuestions);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"Greška pri dohvatanju kviza sa pitanjima {id}");
-                return StatusCode(500, $"Greška pri dohvatanju kviza sa pitanjima: {ex.Message}");
-            }
-        }*/
-
-
 
         // READ jedan po jedan
         // Dobijanje pojedinačnog pitanja po ID
